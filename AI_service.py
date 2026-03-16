@@ -1,10 +1,12 @@
 import requests
 import time
 import io
-
+import os
+from dotenv import load_dotenv
+ 
 def generate_leonardo_image(prompt):
-
-    api_key = "b8c1e7db-ba84-4350-a759-3925f7f1a6aa"
+    load_dotenv()
+    api_key = os.getenv('api_key')
     authorization = f"Bearer {api_key}"
     
     headers = {

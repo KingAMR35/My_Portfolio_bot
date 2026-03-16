@@ -3,6 +3,8 @@ import os
 import base64
 import tempfile
 import cv2
+import pyttsx3
+import wikipedia
 from dotenv import load_dotenv
 from AI_service import generate_leonardo_image
 from db_service import DB_service
@@ -34,10 +36,24 @@ def menu():
     bt2 = types.InlineKeyboardButton(text="AI_assistant_bot", callback_data='bt2')
     bt3 = types.InlineKeyboardButton(text="Blur_bot", callback_data='bt3')
     bt4 = types.InlineKeyboardButton(text="Image_Generator_bot", callback_data='bt4')
+    bt5 = types.InlineKeyboardButton(text="Text_To_Voice_bot", callback_data='bt5')
+    bt6 = types.InlineKeyboardButton(text="Дальше... ➡️", callback_data='bt6')
+    btt = types.InlineKeyboardButton(text="Страница 1/2", callback_data='btt')
     keyboard.row(bt1)
     keyboard.row(bt2)
     keyboard.row(bt3)
     keyboard.row(bt4)
+    keyboard.row(bt5)
+    keyboard.row(btt, bt6)
+    return keyboard
+
+def menu_2():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    bt7 = types.InlineKeyboardButton(text="Wikipedia_bot", callback_data='bt7')
+    cm_btt = types.InlineKeyboardButton(text="Назад 🔙", callback_data='cm_btt')
+    btt = types.InlineKeyboardButton(text="Страница 2/2", callback_data='btt')
+    keyboard.row(bt7)
+    keyboard.row(btt, cm_btt)
     return keyboard
 
 @bot.message_handler(commands=['start'])
@@ -46,7 +62,7 @@ def start_bot(message):
 
 <blockquote>Добро пожаловать в моё портфолио! Я — разработчик Telegram-ботов, и моя страсть к созданию удобных и полезных решений отражается в каждом проекте.
 
-Здесь собраны мои разработки, которые продемонстрируют мои навыки в программирование ботов.
+Здесь собраны мои разработки, которые продемонстрируют мои навыки в программировании ботов.
 
 Приглашаю познакомиться с моим творчеством и оценить, насколько крутыми могут быть Telegram-боты! 🚀
 
@@ -68,7 +84,7 @@ def menu_bot(call):
 @bot.message_handler(commands=['stop'])
 def stop_command(message):
     active_sessions.pop(message.chat.id, None)
-    bot.send_message(message.chat.id, "Работа с консультантом остановлена.")
+    bot.send_message(message.chat.id, "Работа остановлена.")
 
 #MurArt_Samara_bot
 def start_button():
@@ -162,10 +178,10 @@ def AI_keyboard():
 @bot.message_handler(func=lambda m: m.text == "🛑Остановить")
 def stop_button(message):
     active_sessions.pop(message.chat.id, None)
-    bot.send_message(message.chat.id, "Работа с консультантом остановлена.")
+    bot.send_message(message.chat.id, "Работа остановлена.")
     
 @bot.callback_query_handler(func=lambda call: call.data == 'bt1')
-def button1_bot(call):
+def bt1(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             text="""*🎨 Добро пожаловать в уличную галерею Самары! 🌆*\n
@@ -174,13 +190,13 @@ def button1_bot(call):
 
 #AI_assistant_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt2')
-def bt2_1(call):
+def bt2(call):
     active_sessions[call.message.chat.id] = True
     bot.edit_message_text(chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             text=f'''Привет👋!\n
 <blockquote>Я твой консультант, и я готов помочь тебе разобраться в сложных ситуациях, дать полезные советы и предложить оптимальные решения. 🚀</blockquote>\n
-Просто напиши своё сообщение, чтобы начать диалог!\n\nЧтобы закончить, напиши или нажми /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
+Просто напиши своё сообщение, чтобы начать диалог!\n\nЧтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
     
     @bot.message_handler(func=lambda message: bool(message.text.strip()))
     def user_message(message):
@@ -202,7 +218,7 @@ def bt2_1(call):
 
 #Blur_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt3')
-def bt_3_1(call):
+def bt_3(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text=f'''*Привет👋*!
@@ -238,14 +254,14 @@ def bt_3_1(call):
 
 #Image_Generator_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt4')
-def bt_4_1(call):
+def bt_4(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''*Привет👋!*\n\n
 ✨ Добро пожаловать в мир *ИИ-генерации!*\n
 Напиши мне какую-нибудь фразу и я сгенерирую её!🎨''', parse_mode='Markdown', reply_markup=cm_back())
     
-    @bot.message_handler(func=lambda message: message.chat.id == call.message.chat.id)
+    @bot.message_handler(func=lambda message: bool(message.text.strip()))
     def AI_prompt(message):
         prompt = message.text
         chat_id = message.chat.id
@@ -268,6 +284,55 @@ def bt_4_1(call):
         else:
             bot.send_message(chat_id, f"❌ Ошибка: {status}")
 
+#Text_To_Voice_bot
+@bot.callback_query_handler(func=lambda call: call.data == 'bt5')
+def bt_5(call):
+    active_sessions[call.message.chat.id] = True
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    text='''<strong>Привет👋!</strong>
+                    
+<blockquote>Перед вами бот, превращающий текст в  аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
+
+Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
+    
+    @bot.message_handler(func=lambda message: bool(message.text.strip()))
+    def text_to_voice(message):
+        if active_sessions.get(message.chat.id, False):
+            engine = pyttsx3.init()
+            prompt = message.text
+            engine.save_to_file(
+                text=prompt, filename='voices\\audio.mp3'
+            )
+            engine.runAndWait()
+            with open('voices\\audio.mp3', 'rb') as audio:  
+                bot.send_audio(message.chat.id, audio, reply_markup=AI_keyboard())
+        else:
+            pass
+        
+#Wikipedia_bot
+@bot.callback_query_handler(func=lambda call: call.data == 'bt7')
+def bt_7(call):
+    active_sessions[call.message.chat.id] = True
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    text='''<strong>Привет👋!</strong>
+                    
+<blockquote>Меня зовут Wikipedia_bot, и я тут, чтобы оперативно доставлять самую свежую и точную информацию из самой обширной энциклопедии планеты — Wikipedia.  
+
+📚 Любопытствуете о событиях прошлого века, хотите освежить знания по биологии или выяснить происхождение термина? Всё, что вам нужно — это задать вопрос, и я моментально пришлю ответ!</blockquote>
+
+Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
+    
+    @bot.message_handler(func=lambda message: bool(message.text.strip()))
+    def wiki_bot(message):
+        prompt = message.text
+        wikipedia.set_lang("ru")
+        res = wikipedia.summary(prompt, sentences=3)
+        bot.send_message(message.chat.id, f'`{res}`', parse_mode='Markdown', reply_markup=AI_keyboard())
+        
+
+  
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -433,4 +498,19 @@ def callback_inline_message(call):
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.send_message(call.message.chat.id, '<strong>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</strong>', reply_markup=menu(), parse_mode='HTML')
 
+        elif call.data == 'bt6':
+            bot.edit_message_text(chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text='''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
+
+<blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu_2(), parse_mode='HTML')
+            
+        elif call.data == 'cm_btt':
+            bot.edit_message_text(chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text='''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
+
+<blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu(), parse_mode='HTML')
+            
+            
 bot.infinity_polling()

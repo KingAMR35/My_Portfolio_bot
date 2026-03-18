@@ -3,7 +3,7 @@ import os
 import base64
 import tempfile
 import cv2
-import pyttsx3
+from gtts import gTTS
 import wikipedia
 import randfacts
 import random
@@ -25,7 +25,6 @@ TEMP_FOLDER = Path(tempfile.gettempdir())
 AI_sessions = {}
 tts_sessions = {}
 wiki_sessions = {}
-AI_generator_sessions = {}
 
 manager = DB_service(os.getenv('DATABASE'))
 manager.create_tables()
@@ -57,7 +56,7 @@ def menu_2():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     bt7 = types.InlineKeyboardButton(text="Wikipedia_bot", callback_data='bt7')
     bt8 = types.InlineKeyboardButton(text="Rand_fact_bot", callback_data='bt8')
-    bt9 = types.InlineKeyboardButton(text="Guess_bot", callback_data='bt9')
+    bt9 = types.InlineKeyboardButton(text="", callback_data='bt9')
     cm_btt = types.InlineKeyboardButton(text="Назад 🔙", callback_data='cm_btt')
     btt = types.InlineKeyboardButton(text="Страница 2/2", callback_data='btt')
     keyboard.row(bt7)
@@ -81,7 +80,7 @@ def start_bot(message):
     b = types.InlineKeyboardButton(text="📋Открыть меню", callback_data='b')
     keyboard.row(b)
     bot.send_message(message.chat.id, a, parse_mode='HTML', reply_markup=keyboard)
-    
+
 #Меню
 @bot.callback_query_handler(func=lambda call: call.data == 'b')
 def menu_bot(call):
@@ -90,7 +89,7 @@ def menu_bot(call):
             text='''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
 
 <blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu(), parse_mode='HTML')
-    
+
 @bot.message_handler(commands=['stop'])
 def stop_command(message):
     AI_sessions.pop(message.chat.id, None)
@@ -110,7 +109,7 @@ def start_button():
     keyboard.row(button2)
     keyboard.row(cm_back)
     return keyboard
-    
+
 def button():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     button3 = types.InlineKeyboardButton(text="Хотите узнать больше❓", callback_data='button3')
@@ -162,7 +161,7 @@ def button3():
     keyboard.row(button008)
     keyboard.row(button01)
     return keyboard
-    
+
 def c_button():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     button01 = types.InlineKeyboardButton(text="Вернуться в меню 🔙", callback_data='button01')
@@ -180,20 +179,20 @@ def cm_back():
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(cm_back)
     return keyboard
-    
+
 def AI_keyboard():
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     btt1 = types.KeyboardButton(text="🛑Остановить")
     keyboard.row(btt1)
     return keyboard
-    
+
 @bot.message_handler(func=lambda m: m.text == "🛑Остановить")
 def stop_button(message):
     AI_sessions.pop(message.chat.id, None)
     tts_sessions.pop(message.chat.id, None)
     wiki_sessions.pop(message.chat.id, None)
     bot.send_message(message.chat.id, "Работа остановлена.")
-    
+
 @bot.callback_query_handler(func=lambda call: call.data == 'bt1')
 def bt1(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
@@ -251,7 +250,6 @@ def bt_3(call):
 #Image_Generator_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt4')
 def bt_4(call):
-    AI_generator_sessions[call.message.chat.id] = True
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''*Привет👋!*\n\n
@@ -265,11 +263,11 @@ def bt_5(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
-                    
+
 <blockquote>Перед вами бот, превращающий текст в  аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
 
 Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
-        
+
 #Wikipedia_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt7')
 def bt_7(call):
@@ -277,13 +275,13 @@ def bt_7(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
-                    
-<blockquote>Меня зовут Wikipedia_bot, и я тут, чтобы оперативно доставлять самую свежую и точную информацию из самой обширной энциклопедии планеты — Wikipedia.  
+
+<blockquote>Меня зовут Wikipedia_bot, и я тут, чтобы оперативно доставлять самую свежую и точную информацию из самой обширной энциклопедии планеты — Wikipedia.
 
 📚 Любопытствуете о событиях прошлого века, хотите освежить знания по биологии или выяснить происхождение термина? Всё, что вам нужно — это задать вопрос, и я моментально пришлю ответ!</blockquote>
 
 Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
-        
+    
 #Rand_fact_bot
 def dalee():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -306,39 +304,39 @@ def bt_8(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
-                
-<blockquote>Меня зовут Rand_fact_bot, и я собираюсь подарить тебе море интересных фактов  
 
-Просто нажми на кнопку — и я незамедлительно пришлю тебе увлекательные факт о мире.  
+<blockquote>Меня зовут Rand_fact_bot, и я собираюсь подарить тебе море интересных фактов
+
+Просто нажми на кнопку — и я незамедлительно пришлю тебе увлекательные факт о мире.
 
 Делись знанием с друзьями, поражай собеседников глубиной познаний и просто приятно проводи время! 🚀</blockquote>''', parse_mode='HTML', reply_markup=random_facts())
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
     chat_id = message.chat.id
-    user_id = message.from_user.id
-    username = message.from_user.username
+    
     if tts_sessions.get(chat_id, False):
-        manager.create_user(user_id, chat_id, username)
-        engine = pyttsx3.init()
-        engine.save_to_file(message.text, 'voices/audio.mp3')
-        engine.runAndWait()
-        with open('voices/audio.mp3', 'rb') as audio:
-            bot.send_audio(chat_id, audio, reply_markup=AI_keyboard())
-        return
+        prompt = message.text.strip()
+        tts = gTTS(text=prompt, lang='ru', slow=False)
+        audio_file = 'voices/output.mp3'
+        os.makedirs('voices', exist_ok=True)
+        tts.save(audio_file)
+        with open(audio_file, 'rb') as audio:
+            bot.send_audio(message.chat.id, audio, reply_markup=AI_keyboard())
+        os.remove(audio_file)
+        bot.send_message(message.chat.id, "Готово! Отправьте следующий текст.")
     
     elif wiki_sessions.get(chat_id, False):
         try:
-            manager.create_user(user_id, chat_id, username)
             wikipedia.set_lang("ru")
             res = wikipedia.summary(message.text, sentences=3)
             bot.send_message(chat_id, f'`{res}`', parse_mode='Markdown', reply_markup=AI_keyboard())
         except wikipedia.exceptions.PageError:
-            bot.send_message(chat_id, "❌ Информация в Wikipedia не найдена.")
+            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
         return
     
     elif AI_sessions.get(chat_id, False):
-        user_prompt = f"{message.text}"
+        user_prompt = message.text
             
         with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
             response = giga.chat(user_prompt)
@@ -349,33 +347,9 @@ def text_handler(message):
         chat_id = message.chat.id
         username = message.from_user.username
         manager.create_user(user_id, chat_id, username)
-        manager.add_to_prompts(user_id, user_prompt, AI_answer)
+        manager.add_to_prompts(user_prompt, AI_answer)
         return
-    
-    elif AI_generator_sessions.get(chat_id, False):
-        prompt = message.text
-        chat_id = message.chat.id
-        username = message.from_user.username
-        bot.send_chat_action(chat_id, 'typing')
-        bot.send_message(message.chat.id, "Подождите, идёт отправка фото🔄")
-        bot.send_chat_action(chat_id, 'upload_photo')
-        
-        image_buffer, status = generate_leonardo_image(prompt)
-        
-        manager.create_user(user_id, chat_id, username)
-        manager.leonardo_AI(user_id, prompt, username)
-        
-        if image_buffer:
-            bot.send_photo(
-                chat_id=chat_id,
-                photo=image_buffer,
-                caption=f"✨ *{prompt}*\n\n{status}",
-                parse_mode='Markdown'
-            )
-        else:
-            bot.send_message(chat_id, f"❌ Ошибка: {status}")
-        return
-    
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -383,7 +357,7 @@ def callback_inline_message(call):
             bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="""Муралом называется вид монументальной живописи на стенах архитектурных сооружений. 
+            text="""Муралом называется вид монументальной живописи на стенах архитектурных сооружений.
 🎨 Это слово произошло от испанского muro, что в переводе означает *«стена». ⛩*""", parse_mode='Markdown',
             reply_markup=button()
             )
@@ -411,8 +385,8 @@ def callback_inline_message(call):
             bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="""✏️ Муралы в Самаре часто отражают местную культуру и исторические события. Например, в некоторых работах можно увидеть аллюзии на самарские традиции, памятные места и известных личностей. 
-🏞️ Это помогает не только украсить город, но и напоминает его жителям о культурном наследии. 
+            text="""✏️ Муралы в Самаре часто отражают местную культуру и исторические события. Например, в некоторых работах можно увидеть аллюзии на самарские традиции, памятные места и известных личностей.
+🏞️ Это помогает не только украсить город, но и напоминает его жителям о культурном наследии.
 💬📚 Муралы становятся своеобразными «визитными карточками» районов, формируя их уникальный облик и создавая идентичность. 🔥""", reply_markup=c_button()
             )
 
@@ -433,96 +407,96 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button5':
-            with open('images\\1.png', 'rb') as f:  
+            with open('images\\1.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Будущее»*\n
-С этим муралом художник Дмитрий Горшков стал финалистом фестиваля стрит-арта Приволжского федерального округа «ФормАт». 
-По словам автора, Венера на картине символизирует жизненный опыт, а дирижабль — движение вперёд. 
+С этим муралом художник Дмитрий Горшков стал финалистом фестиваля стрит-арта Приволжского федерального округа «ФормАт».
+По словам автора, Венера на картине символизирует жизненный опыт, а дирижабль — движение вперёд.
 Эта работа вдохновляет задуматься о том, что ждут в будущем школьники и какие цели ставят перед собой. 🌟""", parse_mode='Markdown', reply_markup=del_button())
 
         elif call.data == 'button6':
-            with open('images\\2.png', 'rb') as f:  
+            with open('images\\2.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🚀 Мурал в честь Юрия Гагарина*\n
-Этот потрясающий мурал посвящен первому космонавту Юрию Алексеевичу Гагарину. 
-Яркое произведение служит не только почтением выдающемуся человеку, но и символом космической гордости России, поскольку именно Самара заслуженно носит звание Космической столицы. 
+Этот потрясающий мурал посвящен первому космонавту Юрию Алексеевичу Гагарину.
+Яркое произведение служит не только почтением выдающемуся человеку, но и символом космической гордости России, поскольку именно Самара заслуженно носит звание Космической столицы.
 Важно отметить, что мурал привлекает внимание горожан и гостей к истории космонавтики и научному прогрессу нашей страны. 🌍⭐""", parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button7':
-            with open('images\\3.png', 'rb') as f:  
-                bot.send_photo(call.message.chat.id, f, caption="""*👾 Лев Яшин*\n 
-Этот мурал увековечил легендарного советского футболиста Льва Яшина, знаменитого своими невероятными вратарскими талантами и признанного одним из лучших голкиперов мира. 
-Произведение подчеркивает значимость Яшина как спортивного кумира и выражает уважение к его огромному вкладу в российскую футбольную культуру. 
+            with open('images\\3.png', 'rb') as f:
+                bot.send_photo(call.message.chat.id, f, caption="""*👾 Лев Яшин*\n
+Этот мурал увековечил легендарного советского футболиста Льва Яшина, знаменитого своими невероятными вратарскими талантами и признанного одним из лучших голкиперов мира.
+Произведение подчеркивает значимость Яшина как спортивного кумира и выражает уважение к его огромному вкладу в российскую футбольную культуру.
 Его волевые качества и страсть к победам служат источником вдохновения, призывая заниматься спортом и гордиться успехами российского футбола. 🌟
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button8':
-            with open('images\\4.png', 'rb') as f:  
+            with open('images\\4.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌿 «Чистый воздух»*\n
-Этот мурал не только придает городу красоту, но и несет глубокое символическое послание. 
-Появившись в эпоху пандемии COVID-19, он становится важным напоминанием о ценности здоровья и охраны природы. 
+Этот мурал не только придает городу красоту, но и несет глубокое символическое послание.
+Появившись в эпоху пандемии COVID-19, он становится важным напоминанием о ценности здоровья и охраны природы.
 Рассматривая мурал с детьми, полезно обсудить важность чистого воздуха и его влияние на благополучие человека. 🤸☘️
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button008':
-            with open('images\\5.png', 'rb') as f:  
+            with open('images\\5.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🩺 «Благодарность врачам»*\n
-Этот мурал демонстрирует искреннее уважение к медикам, проявившим героизм и самоотверженность в борьбе с пандемией COVID-19. 
-Детям можно рассказать о важности профессии врача и огромной роли медиков в нашем обществе, подчёркивая, насколько они важны для защиты здоровья населения. 
-Можно затронуть тему влияния медицинского труда на наше сообщество, особенно в трудные времена, когда требуется дополнительная помощь и забота. 
+Этот мурал демонстрирует искреннее уважение к медикам, проявившим героизм и самоотверженность в борьбе с пандемией COVID-19.
+Детям можно рассказать о важности профессии врача и огромной роли медиков в нашем обществе, подчёркивая, насколько они важны для защиты здоровья населения.
+Можно затронуть тему влияния медицинского труда на наше сообщество, особенно в трудные времена, когда требуется дополнительная помощь и забота.
 Дети смогут поделиться своим пониманием значения здоровья, выразить своё отношение к нему и осознать ценность благодарности тем, кто ежедневно заботиться о людях. 💝
 """, parse_mode='Markdown', reply_markup=del_button()
             )
-        
+
         elif call.data == 'button08':
-            with open('images\\6.png', 'rb') as f:  
+            with open('images\\6.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌥️ «Девушка, сидящая на облаках»*\n
-Приближаясь к этому муралу, начните разговор о его смысле и эмоциях, которые он вызывает. 
-Задайте детям вопросы о том, что они видят на картинке: кто эта девушка, почему она расположилась на облаках и какое настроение, по их мнению, это передает? 
-Расскажите о символизме облаков, символизирующих мечты, надежду и свободу. 
+Приближаясь к этому муралу, начните разговор о его смысле и эмоциях, которые он вызывает.
+Задайте детям вопросы о том, что они видят на картинке: кто эта девушка, почему она расположилась на облаках и какое настроение, по их мнению, это передает?
+Расскажите о символизме облаков, символизирующих мечты, надежду и свободу.
 Такое обсуждение способствует развитию творческого мышления детей и учит глубже понимать искусство в городском пространстве. 🌟
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button10':
-            with open('images\\7.png', 'rb') as f:  
+            with open('images\\7.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*✈️ Александр Петрович Мамкин*\n
-Мурал посвящён подвигу лётчика А.П. Мамкина, который в Великую Отечественную войну эвакуировал 90 детей с оккупированных территорий. 
-Несмотря на жестокие испытания, он сумел посадить поврежденный самолёт и спасти малышей. 
+Мурал посвящён подвигу лётчика А.П. Мамкина, который в Великую Отечественную войну эвакуировал 90 детей с оккупированных территорий.
+Несмотря на жестокие испытания, он сумел посадить поврежденный самолёт и спасти малышей.
 Важно показать детям, что подобные поступки отдельных героев способны кардинально повлиять на судьбу множества людей.
 Вместе обсудим, каким образом память о таких персонажах передается через искусство и почему это имеет огромное значение для сохранения национальной культуры. 🌟
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button11':
-            with open('images\\8.png', 'rb') as f:  
+            with open('images\\8.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌍 Герои народного ополчения*\n
-Мурал прославляет героев народного ополчения, служа украшением города и одновременно напоминанием о важном историческом событии, когда народ объединился для защиты Отечества. 
-Обращаясь к детям рядом с этим муралом, предложите обсудить День народного единства: что он значит, какие события произошли тогда в истории России. 
+Мурал прославляет героев народного ополчения, служа украшением города и одновременно напоминанием о важном историческом событии, когда народ объединился для защиты Отечества.
+Обращаясь к детям рядом с этим муралом, предложите обсудить День народного единства: что он значит, какие события произошли тогда в истории России.
 Важно вспомнить, кем были герои народного ополчения, какие подвиги они совершали и как их храбрость продолжает вдохновлять современников. 🦸
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button12':
-            with open('images\\9.png', 'rb') as f:  
+            with open('images\\9.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Воспоминание»*\n
-Яркий и эмоциональный мурал приглашает зрителей погрузиться в размышления о человеческой памяти. 
-Девушка на картине воплощает воспоминания разных моментов жизни, создающих мозаику характера и мировоззрения. 
-Образ наполнен чувствами и деталями, вызывая ассоциации и вдохновляя на диалог. 
+Яркий и эмоциональный мурал приглашает зрителей погрузиться в размышления о человеческой памяти.
+Девушка на картине воплощает воспоминания разных моментов жизни, создающих мозаику характера и мировоззрения.
+Образ наполнен чувствами и деталями, вызывая ассоциации и вдохновляя на диалог.
 Со школьниками можно обсудить, какие важные события остаются в их памяти и почему одни эпизоды запоминаются сильнее других. 🌟
 """, parse_mode='Markdown', reply_markup=del_button()
             )
 
         elif call.data == 'button13':
-            with open('images\\11.png', 'rb') as f:  
+            with open('images\\11.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌳 «Древо жизни»*\n
-Этот оригинальный мурал напоминает знаменитую сказку «Алиса в Стране чудес»: яркое дерево и кошки с человечьими лицами создают необычную картину среди привычной серости самарского пейзажа. 
-Обсудите с детьми, что значит для них понятие «Древо жизни». 
-Пусть поделятся своими мыслями и впечатлениями, вспомнят персонажей любимой сказки и скажут, видели ли они сами в жизни нечто подобное. 
+Этот оригинальный мурал напоминает знаменитую сказку «Алиса в Стране чудес»: яркое дерево и кошки с человечьими лицами создают необычную картину среди привычной серости самарского пейзажа.
+Обсудите с детьми, что значит для них понятие «Древо жизни».
+Пусть поделятся своими мыслями и впечатлениями, вспомнят персонажей любимой сказки и скажут, видели ли они сами в жизни нечто подобное.
 Такого рода беседы развивают фантазию ребенка, помогая лучше осмыслить, как искусство отражает наши мечты и впечатления, способно менять окружающее пространство и дарить радость. 🌷🐱
 """, parse_mode='Markdown', reply_markup=del_button()
-                )    
+                )
 
         elif call.data == 'button01':
             bot.edit_message_text(
@@ -533,10 +507,10 @@ def callback_inline_message(call):
 ✨ Готовы нырнуть в это искусство? Давайте вместе раскроем секреты самарских муралов, узнаем, кто их создаёт, и вдохнём новую жизнь в каждый уголок родного города! ⭐️🚀""", parse_mode='Markdown',
                 reply_markup=start_button()
             )
-            
+
         elif call.data == 'button001':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            
+
         elif call.data == 'cm_back':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             bot.send_message(call.message.chat.id, '<strong>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</strong>', reply_markup=menu(), parse_mode='HTML')
@@ -547,14 +521,14 @@ def callback_inline_message(call):
                         text='''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
 
 <blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu_2(), parse_mode='HTML')
-            
+
         elif call.data == 'cm_btt':
             bot.edit_message_text(chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             text='''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
 
 <blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu(), parse_mode='HTML')
-            
+
         elif call.data == 'random_facts':
             x = randfacts.get_fact()
             translator = Translator(to_lang="ru")
@@ -562,5 +536,7 @@ def callback_inline_message(call):
             bot.edit_message_text(chat_id=call.message.chat.id,
         message_id=call.message.message_id,
         text=f'<blockquote>{translation}</blockquote>', reply_markup=dalee(), parse_mode='HTML')
-            
+
+
+
 bot.infinity_polling()

@@ -12,11 +12,11 @@ class DB_service():
     def create_tables(self):
         with sqlite3.connect(self.database) as conn:
             cur = conn.cursor()
-            cur.execute(""" CREATE TABLE IF NOT EXISTS AI_users (
+            cur.execute(""" CREATE TABLE IF NOT EXISTS users (
                     ID INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER UNIQUE NOT NULL,
                     chat_id INTEGER NOT NULL,
-                    username TEXT) """)
+                    username TEXT NOT NULL) """)
             
             cur.execute(""" CREATE TABLE IF NOT EXISTS prompts (
                         user_id INTEGER,
@@ -34,23 +34,25 @@ class DB_service():
         with sqlite3.connect(self.database) as conn:
             try:
                 cur = conn.cursor()
-                cur.execute('''INSERT INTO AI_users (user_id, chat_id, username) 
+                cur.execute('''INSERT INTO users (user_id, chat_id, username) 
                             VALUES (?, ?, ?)''', (user_id, chat_id, username))
                 conn.commit()
             except sqlite3.IntegrityError:
-                cur.execute('UPDATE AI_users SET username = ? WHERE user_id = ?', (username, user_id))
-            
+                cur.execute('UPDATE users SET username = ? WHERE user_id = ?', (username, user_id))
+
     def add_to_prompts(self, user_id, user_prompt, AI_answer):
         with sqlite3.connect(self.database) as conn:
             cur = conn.cursor()
             cur.execute('''INSERT INTO prompts (user_id, user_prompt, AI_answer) 
                          VALUES (?, ?, ?)''', (user_id, user_prompt, AI_answer))
+            conn.commit()
             
     def leonardo_AI(self, user_id, prompt, username):
         with sqlite3.connect(self.database) as conn:
             cur = conn.cursor()
             cur.execute('''INSERT INTO leonardo_prompts (user_id, prompt, username)
                         VALUES (?, ?, ?)''', (user_id, prompt, username))
+            conn.commit()
             
 if __name__ == '__main__':
     manager = DB_service(DATABASE)

@@ -6,9 +6,9 @@ import cv2
 from gtts import gTTS
 import wikipedia
 import randfacts
-import random
+import validators
+import pyqrcode
 from dotenv import load_dotenv
-from AI_service import generate_leonardo_image
 from db_service import DB_service
 from pathlib import Path
 from gigachat import GigaChat
@@ -25,6 +25,8 @@ TEMP_FOLDER = Path(tempfile.gettempdir())
 AI_sessions = {}
 tts_sessions = {}
 wiki_sessions = {}
+QR_sessions = {}
+blur_session = {}
 
 manager = DB_service(os.getenv('DATABASE'))
 manager.create_tables()
@@ -56,7 +58,7 @@ def menu_2():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     bt7 = types.InlineKeyboardButton(text="Wikipedia_bot", callback_data='bt7')
     bt8 = types.InlineKeyboardButton(text="Rand_fact_bot", callback_data='bt8')
-    bt9 = types.InlineKeyboardButton(text="", callback_data='bt9')
+    bt9 = types.InlineKeyboardButton(text="Jokes_bot", callback_data='bt9')
     cm_btt = types.InlineKeyboardButton(text="Назад 🔙", callback_data='cm_btt')
     btt = types.InlineKeyboardButton(text="Страница 2/2", callback_data='btt')
     keyboard.row(bt7)
@@ -67,7 +69,7 @@ def menu_2():
 
 @bot.message_handler(commands=['start'])
 def start_bot(message):
-    a = f"""Привет, {message.from_user.first_name}!👋
+    a = f"""Привет, <strong>{message.from_user.first_name}!👋</strong>
 
 <blockquote>Добро пожаловать в моё портфолио! Я — разработчик Telegram-ботов, и моя страсть к созданию удобных и полезных решений отражается в каждом проекте.
 
@@ -76,6 +78,10 @@ def start_bot(message):
 Приглашаю познакомиться с моим творчеством и оценить, насколько крутыми могут быть Telegram-боты! 🚀
 
 Приятного путешествия по моему миру технологий и креатива!😊</blockquote>\n\n<strong>Жми на кнопку, чтобы увидеть мои разработки!</strong>"""
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    username = message.from_user.username
+    manager.create_user(user_id, chat_id, username)
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     b = types.InlineKeyboardButton(text="📋Открыть меню", callback_data='b')
     keyboard.row(b)
@@ -95,6 +101,8 @@ def stop_command(message):
     AI_sessions.pop(message.chat.id, None)
     tts_sessions.pop(message.chat.id, None)
     wiki_sessions.pop(message.chat.id, None)
+    QR_sessions.pop(message.chat.id, None)
+    blur_session.pop(message.chat.id, None)
     bot.send_message(message.chat.id, "Работа остановлена.")
 
 #MurArt_Samara_bot
@@ -191,6 +199,8 @@ def stop_button(message):
     AI_sessions.pop(message.chat.id, None)
     tts_sessions.pop(message.chat.id, None)
     wiki_sessions.pop(message.chat.id, None)
+    QR_sessions.pop(message.chat.id, None)
+    blur_session.pop(message.chat.id, None)
     bot.send_message(message.chat.id, "Работа остановлена.")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'bt1')
@@ -214,38 +224,15 @@ def bt2(call):
 #Blur_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt3')
 def bt_3(call):
+    blur_session[call.message.chat.id] = True
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
-                text=f'''*Привет👋*!
-Отправь мне любую картинку, и я сделаю её мягкой и загадочной, добавив лёгкую дымку.Получишь красивую и атмосферную фотографию *с эффектом блюра! ✨*
-                ''', parse_mode='Markdown', reply_markup=cm_back())
-    @bot.message_handler(content_types=['photo'])
-    def handle_photo(message):
-      file_id = message.photo[-1].file_id
-      file_info = bot.get_file(file_id)
-      downloaded_file = bot.download_file(file_info.file_path)
+                text=f'''<strong>Привет👋!</strong>
+                
+<blockquote>Отправь мне любую картинку, и я сделаю её мягкой и загадочной, добавив лёгкую дымку. Получишь красивую и атмосферную фотографию <strong>с эффектом блюра!</strong> ✨</blockquote>
 
-      temp_file = TEMP_FOLDER / f"{file_id}.jpg"
-      with open(temp_file, 'wb') as f:
-          f.write(downloaded_file)
-
-      image = cv2.imread(str(temp_file))
-
-      if image is None:
-          bot.reply_to(message, "Не удалось распознать изображение.")
-          return
-
-      blurred_image = cv2.GaussianBlur(image, (15, 15), 0)
-      pixelated_image = cv2.resize(blurred_image, (30, 30), interpolation=cv2.INTER_NEAREST)
-      pixelated_image = cv2.resize(pixelated_image, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
-      processed_temp_file = TEMP_FOLDER / f"{file_id}_processed.jpg"
-      cv2.imwrite(str(processed_temp_file), pixelated_image)
-
-      with open(processed_temp_file, 'rb') as pf:
-          bot.send_photo(message.chat.id, pf, caption='Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨')
-
-      temp_file.unlink(missing_ok=True)
-      processed_temp_file.unlink(missing_ok=True)
+<strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>
+                ''', parse_mode='HTML', reply_markup=cm_back())
 
 #Image_Generator_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt4')
@@ -263,10 +250,10 @@ def bt_5(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
-
+                    
 <blockquote>Перед вами бот, превращающий текст в  аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
 
-Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
+<strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>''', parse_mode='HTML', reply_markup=cm_back())
 
 #Wikipedia_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt7')
@@ -311,6 +298,84 @@ def bt_8(call):
 
 Делись знанием с друзьями, поражай собеседников глубиной познаний и просто приятно проводи время! 🚀</blockquote>''', parse_mode='HTML', reply_markup=random_facts())
 
+#Jokes_bot
+def joke():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    joke_start = types.InlineKeyboardButton(text="Шутки", callback_data='joke_start')
+    cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
+    keyboard.row(joke_start)
+    keyboard.row(cm_back)
+    return keyboard
+
+def joke2():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    joke_start = types.InlineKeyboardButton(text="Следующая шутка", callback_data='joke_start')
+    cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
+    keyboard.row(joke_start)
+    keyboard.row(cm_back)
+    return keyboard
+
+@bot.callback_query_handler(func=lambda call: call.data == 'bt9')
+def bt_9(call):
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text='''<strong>Привет👋!</strong>
+                
+<blockquote>Меня зовут Jokes_bot, и я создан, чтобы поднять тебе настроение и зарядить позитивом!  
+
+Нажми на кнопку — и я немедленно пришлю тебе отличную шутку, которая заставит улыбнуться или рассмеяться.</blockquote> 
+
+<strong>Хорошее настроение гарантировано! 🚀</strong>''', parse_mode='HTML', reply_markup=joke())
+
+#QR_Creator_bot
+def is_link(text):
+    return validators.url(text)
+
+@bot.callback_query_handler(func=lambda call: call.data == 'bt10')
+def bt_10(call):
+    QR_sessions[call.message.chat.id] = True
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text='''<strong>Привет👋!</strong>
+                
+<blockquote>Меня зовут <strong>QR_creator_bot</strong>, и я — твой личный помощник по созданию QR-кодов. Моя задача — превращать любые ссылки в удобные и стильные коды за пару секунд.
+
+Больше не нужно копировать и отправлять длинные, неудобные URL-адреса, которые вечно ломаются в сообщениях. Просто пришли мне любую ссылку — на интересную статью, видео, твой профиль в социальной сети или интернет-магазин — и я мгновенно сгенерирую для тебя QR-код.</blockquote> 
+
+<strong>Пришли мне свою ссылку, и я приступлю к работе! Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку🚀</strong>''', parse_mode='HTML', reply_markup=cm_back())
+
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    chat_id = message.chat.id
+    
+    if blur_session.get(chat_id, False):
+        file_id = message.photo[-1].file_id
+        file_info = bot.get_file(file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+
+        temp_file = TEMP_FOLDER / f"{file_id}.jpg"
+        with open(temp_file, 'wb') as f:
+            f.write(downloaded_file)
+
+        image = cv2.imread(str(temp_file))
+
+        if image is None:
+            bot.reply_to(message, "Не удалось распознать изображение.")
+            return
+
+        blurred_image = cv2.GaussianBlur(image, (15, 15), 0)
+        pixelated_image = cv2.resize(blurred_image, (30, 30), interpolation=cv2.INTER_NEAREST)
+        pixelated_image = cv2.resize(pixelated_image, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
+        processed_temp_file = TEMP_FOLDER / f"{file_id}_processed.jpg"
+        cv2.imwrite(str(processed_temp_file), pixelated_image)
+
+        with open(processed_temp_file, 'rb') as pf:
+            bot.send_photo(message.chat.id, pf, caption='Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨', reply_markup=AI_keyboard())
+
+        temp_file.unlink(missing_ok=True)
+        processed_temp_file.unlink(missing_ok=True)    
+        return
+
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
     chat_id = message.chat.id
@@ -350,6 +415,17 @@ def text_handler(message):
         manager.add_to_prompts(user_prompt, AI_answer)
         return
 
+    elif QR_sessions.get(chat_id, False):
+        if is_link(message.text):
+            text = message.text
+            url = pyqrcode.create(text)
+            url.png('voices\QR.png', scale=8) 
+            with open('voices\QR.png', 'rb') as p:
+                bot.send_photo(message.chat.id, p, reply_markup=AI_keyboard())
+        else:
+            bot.reply_to(message, "❌ Это не ссылка.", reply_markup=AI_keyboard())
+        return
+    
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -537,6 +613,13 @@ def callback_inline_message(call):
         message_id=call.message.message_id,
         text=f'<blockquote>{translation}</blockquote>', reply_markup=dalee(), parse_mode='HTML')
 
-
+        elif call.data == 'joke_start':
+            prompt = 'Привет, расскажи мне анекдот или забавную историю. Используй яркие образы и творческий подход, чтобы вызвать улыбку!'
+            with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
+                response = giga.chat(prompt)
+                AI_answer = response.choices[0].message.content.strip()
+            bot.edit_message_text(chat_id=call.message.chat.id, 
+                        message_id=call.message.message_id,
+                        text=f'`{AI_answer}`', reply_markup=joke2(), parse_mode='Markdown')
 
 bot.infinity_polling()

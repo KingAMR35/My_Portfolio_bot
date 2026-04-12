@@ -1,0 +1,12 @@
+pyTelegramBotAPI>=4.20.0
+python-dotenv>=1.0.0
+opencv-python>=4.10.0
+wikipedia>=1.4.0
+randfacts>=0.2.10
+validators>=0.33.0
+pyqrcode>=1.2.1
+gTTS>=2.5.1
+translate>=3.6.1
+gigachat>=0.1.36
+requests>=2.32.0
+Pillow>=10.4.0

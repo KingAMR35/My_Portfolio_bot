@@ -3,13 +3,12 @@ import os
 import base64
 import tempfile
 import cv2
-import pyttsx3
 import wikipedia
 import randfacts
 import validators
 import pyqrcode
-import schedule
-import time
+import random
+from gtts import gTTS
 from dotenv import load_dotenv
 from AI_service import generate_leonardo_image
 from db_service import DB_service
@@ -37,6 +36,7 @@ manager.create_tables()
 bot.set_my_commands(
     commands=[
         telebot.types.BotCommand("start", "🚀 Запускает бота"),
+        telebot.types.BotCommand("help", "📋 Показать описание всех ботов")
     ]
 )
 
@@ -45,7 +45,7 @@ def menu():
     bt1 = types.InlineKeyboardButton(text="MurArt_Samara_bot", callback_data='bt1')
     bt2 = types.InlineKeyboardButton(text="AI_assistant_bot", callback_data='bt2')
     bt3 = types.InlineKeyboardButton(text="Blur_bot", callback_data='bt3')
-    bt4 = types.InlineKeyboardButton(text="Image_Generator_bot", callback_data='bt4')
+    bt4 = types.InlineKeyboardButton(text="Number_Guess_bot", callback_data='bt11')
     bt5 = types.InlineKeyboardButton(text="Text_To_Voice_bot", callback_data='bt5')
     bt6 = types.InlineKeyboardButton(text="Дальше... ➡️", callback_data='bt6')
     btt = types.InlineKeyboardButton(text="Страница 1/2", callback_data='btt')
@@ -63,29 +63,30 @@ def menu_2():
     bt8 = types.InlineKeyboardButton(text="Rand_fact_bot", callback_data='bt8')
     bt9 = types.InlineKeyboardButton(text="Jokes_bot", callback_data='bt9')
     bt10 = types.InlineKeyboardButton(text="QR_Creator_bot", callback_data='bt10')
-    bt11 = types.InlineKeyboardButton(text="Schedule_bot", callback_data='bt11')
-    f_bt = types.InlineKeyboardButton(text="Дальше... ➡️", callback_data='f_bt')
+    bt11 = types.InlineKeyboardButton(text="Image_Generator_bot", callback_data='bt4')
     cm_btt = types.InlineKeyboardButton(text="Назад 🔙", callback_data='cm_btt')
-    btt = types.InlineKeyboardButton(text="2/2", callback_data='btt')
+    btt = types.InlineKeyboardButton(text="Страница 2/2", callback_data='btt')
     keyboard.row(bt7)
     keyboard.row(bt8)
     keyboard.row(bt9)
     keyboard.row(bt10)
     keyboard.row(bt11)
-    keyboard.row(cm_btt, btt, f_bt)
+    keyboard.row(btt, cm_btt)
     return keyboard
 
 @bot.message_handler(commands=['start'])
 def start_bot(message):
     a = f"""Привет, <strong>{message.from_user.first_name}!👋</strong>
 
-<blockquote>Добро пожаловать в моё портфолио! Я — разработчик Telegram-ботов, и моя страсть к созданию удобных и полезных решений отражается в каждом проекте.
+<blockquote><strong>Добро пожаловать в моё портфолио!</strong> Я — разработчик Telegram-ботов, и моя страсть к созданию удобных и полезных решений отражается в каждом проекте.
 
 Здесь собраны мои разработки, которые продемонстрируют мои навыки в программировании ботов.
 
 Приглашаю познакомиться с моим творчеством и оценить, насколько крутыми могут быть Telegram-боты! 🚀
 
-Приятного путешествия по моему миру технологий и креатива!😊</blockquote>\n\n<strong>Жми на кнопку, чтобы увидеть мои разработки!</strong>"""
+<strong>Приятного путешествия по моему миру технологий и креатива!😊</strong></blockquote>
+
+<strong>✨ <i>Подробно о возможностях ботов — /help</i></strong>\n\n<strong>Жми на кнопку, чтобы увидеть мои разработки!</strong>"""
     chat_id = message.chat.id
     user_id = message.from_user.id
     username = message.from_user.username
@@ -95,6 +96,45 @@ def start_bot(message):
     keyboard.row(b)
     bot.send_message(message.chat.id, a, parse_mode='HTML', reply_markup=keyboard)
     
+@bot.message_handler(commands=['help'])
+def help_command(message):
+    help_text = f"""<strong>📋 Что умеют мои боты</strong>
+
+<blockquote><strong>🎨 MurArt_Samara_bot</strong>
+Показывает муралы Самары с адресами и фото</blockquote>
+
+<blockquote><strong>🤖 AI_assistant_bot</strong>
+Отвечает на вопросы и даёт советы</blockquote>
+
+<blockquote><strong>🖼️ Blur_bot</strong>
+Размывает фотографии с эффектом арта</blockquote>
+
+<blockquote><strong>🎮 Number_Guess_bot</strong>
+Игра "угадай число" с лидербордом</blockquote>
+
+<blockquote><strong>🎤 Text_To_Voice_bot</strong>
+Превращает текст в голосовые сообщения</blockquote>
+
+<blockquote><strong>📚 Wikipedia_bot</strong>
+Ищет информацию в русской Википедии</blockquote>
+
+<blockquote><strong>🔬 Rand_fact_bot</strong>
+Присылает случайные научные факты</blockquote>
+
+<blockquote><strong>😂 Jokes_bot</strong>
+Рассказывает анекдоты и шутки</blockquote>
+
+<blockquote><strong>📱 QR_Creator_bot</strong>
+Создаёт QR-коды для ссылок</blockquote>
+
+<blockquote><strong>🖌️ Image_Generator_bot</strong>
+Генерирует картинки по описанию</blockquote>
+
+<strong>💻 Управление: /start /stop /help</strong>"""
+
+    bot.send_message(message.chat.id, help_text, parse_mode='HTML')
+
+
 #Меню
 @bot.callback_query_handler(func=lambda call: call.data == 'b')
 def menu_bot(call):
@@ -250,8 +290,8 @@ def bt_4(call):
     AI_generator_sessions[call.message.chat.id] = True
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
-                text='''*Привет👋!*\n\n
-✨ Добро пожаловать в мир *ИИ-генерации!*\n
+                text='''<strong>Привет👋!</strong>\n
+<blockquote>✨ Добро пожаловать в мир <strong>ИИ-генерации!</strong></blockquote>\n
 Напиши мне какую-нибудь фразу и я сгенерирую её!🎨''', parse_mode='Markdown', reply_markup=cm_back())
 
 #Text_To_Voice_bot
@@ -262,7 +302,7 @@ def bt_5(call):
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
                     
-<blockquote>Перед вами бот, превращающий текст в  аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
+<blockquote>Перед вами бот, превращающий текст в аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
 
 <strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>''', parse_mode='HTML', reply_markup=cm_back())
         
@@ -355,6 +395,59 @@ def bt_10(call):
 
 <strong>Пришли мне свою ссылку, и я приступлю к работе! Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку🚀</strong>''', parse_mode='HTML', reply_markup=cm_back())
 
+#Game_bot
+def bt11_keyboard():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    game = types.InlineKeyboardButton(text='Игра-угадайка', callback_data='game', style='primary')
+    leader = types.InlineKeyboardButton(text='Посмотреть топ игроков', callback_data='leader')
+    cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
+    keyboard.row(game)
+    keyboard.row(leader)
+    keyboard.row(cm_back)
+    return keyboard
+    
+def again_keyboard():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    again = types.InlineKeyboardButton(text='Еще раз', callback_data='game')
+    game_menu = types.InlineKeyboardButton(text='Вернуться в игровое меню', callback_data='game_menu')
+    cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
+    keyboard.row(again)
+    keyboard.row(game_menu)
+    keyboard.row(cm_back)
+    return keyboard
+    
+@bot.callback_query_handler(func=lambda call: call.data == 'bt11')
+def bt_11(call):
+    welcome_text = f'''<strong>Привет👋</strong>
+
+<blockquote>Меня зовут <strong>Number_Guess_bot</strong>, и я — твой личный тренер по угадыванию чисел!
+🎮 Моя задача — загадывать числа от 1 до 100 и помогать тебе бить рекорды за минимум попыток.
+
+Больше не трать время на скучные дела — просто угадай число с подсказками "больше/меньше", собери лидерборд и делись с друзьями! Я сохраню твой лучший результат.</blockquote>'''
+    bot.edit_message_text(chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
+
+@bot.message_handler(regexp=r'^\d{1,3}$')
+def guess(message):
+    chat_id = message.chat.id
+    username = message.from_user.username
+    game = manager.get_game(chat_id)
+    
+    user_choice = int(message.text)
+    attempts = game[2] + 1
+    manager.save_attempt(chat_id, attempts)
+    bot_choice = game[1]
+    
+    if bot_choice > user_choice:
+        bot.send_message(chat_id, f'<b>📈 Число больше</b>\nПопыток: <code>{attempts}</code>', parse_mode='HTML')
+    elif bot_choice < user_choice:
+        bot.send_message(chat_id, f'<b>📉 Число меньше</b>\nПопыток: <code>{attempts}</code>', parse_mode='HTML')
+    else:
+        manager.end_game(chat_id, username, attempts)
+        bot.send_message(chat_id, f'<b>🎉 Поздравляем!</b>\nУгадали за <code>{attempts}</code> попыток!', 
+                        parse_mode='HTML', reply_markup=again_keyboard())
+
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
     chat_id = message.chat.id
@@ -362,13 +455,15 @@ def text_handler(message):
     username = message.from_user.username
     
     if tts_sessions.get(chat_id, False):
-        manager.create_user(user_id, chat_id, username)
-        engine = pyttsx3.init()
-        engine.save_to_file(message.text, 'voices/audio.mp3')
-        engine.runAndWait()
-        with open('voices/audio.mp3', 'rb') as audio:
-            bot.send_audio(chat_id, audio, reply_markup=AI_keyboard())
-        return
+        prompt = message.text.strip()
+        tts = gTTS(text=prompt, lang='ru', slow=False)
+        audio_file = 'voices/audio.mp3'
+        os.makedirs('voices', exist_ok=True)
+        tts.save(audio_file)
+        with open(audio_file, 'rb') as audio:
+            bot.send_audio(message.chat.id, audio, reply_markup=AI_keyboard())
+        os.remove(audio_file)
+        bot.send_message(message.chat.id, "Готово! Отправьте следующий текст.")
     
     elif wiki_sessions.get(chat_id, False):
         try:
@@ -388,7 +483,6 @@ def text_handler(message):
             AI_answer = response.choices[0].message.content.strip()
         bot.send_message(message.chat.id, AI_answer, reply_markup=AI_keyboard(), parse_mode='Markdown')
             
-        manager.create_user(user_id, chat_id, username)
         manager.add_to_prompts(user_id, user_prompt, AI_answer)
         return
     
@@ -402,7 +496,6 @@ def text_handler(message):
         
         image_buffer, status = generate_leonardo_image(prompt)
         
-        manager.create_user(user_id, chat_id, username)
         manager.leonardo_AI(user_id, prompt, username)
         
         if image_buffer:
@@ -428,7 +521,7 @@ def text_handler(message):
         return
         
 @bot.message_handler(content_types=['photo'])
-def handle_photo(message):
+def photo_handler(message):
     chat_id = message.chat.id
     
     if blur_session.get(chat_id, False):
@@ -458,7 +551,7 @@ def handle_photo(message):
         temp_file.unlink(missing_ok=True)
         processed_temp_file.unlink(missing_ok=True)    
         return
-        
+               
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -654,5 +747,34 @@ def callback_inline_message(call):
             bot.edit_message_text(chat_id=call.message.chat.id, 
                         message_id=call.message.message_id,
                         text=f'`{AI_answer}`', reply_markup=joke2(), parse_mode='Markdown')
+        
+        elif call.data == 'game':
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            chat_id = call.message.chat.id
+            bot_choice = random.randint(1, 100)
+            manager.start_game(chat_id, bot_choice)
+            bot.send_message(call.message.chat.id, '<b>✅ Игра начата!</b>\nОтправьте число.', parse_mode='HTML')
             
+        elif call.data == 'leader':
+            top = manager.get_leaderboard()
+            if top:
+                text = '*🏆 Лидерборд*\n'
+                for i, (user, score) in enumerate(top, 1):
+                    text += f'{i}. *{user}*: `{score}`\n'
+            else:
+                text = '*Лидерборд пуст*'
+            bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+            
+        elif call.data == 'game_menu':
+            welcome_text = f'''<strong>Привет👋</strong>
+
+<blockquote>Меня зовут <strong>Number_Guess_bot</strong>, и я — твой личный тренер по угадыванию чисел!
+🎮 Моя задача — загадывать числа от 1 до 100 и помогать тебе бить рекорды за минимум попыток.
+
+Больше не трать время на скучные дела — просто угадай число с подсказками "больше/меньше", собери лидерборд и делись с друзьями! Я сохраню твой лучший результат.</blockquote>'''
+            bot.edit_message_text(chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
+        
+         
 bot.infinity_polling()

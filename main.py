@@ -8,6 +8,7 @@ import randfacts
 import validators
 import pyqrcode
 import random
+import time
 from gtts import gTTS
 from dotenv import load_dotenv
 from AI_service import generate_leonardo_image
@@ -29,6 +30,7 @@ wiki_sessions = {}
 AI_generator_sessions = {}
 QR_sessions = {}
 blur_session = {}
+SUPER_ADMIN_ID = 5213315899
 
 manager = DB_service(os.getenv('DATABASE'))
 manager.create_tables()
@@ -36,7 +38,8 @@ manager.create_tables()
 bot.set_my_commands(
     commands=[
         telebot.types.BotCommand("start", "🚀 Запускает бота"),
-        telebot.types.BotCommand("help", "📋 Показать описание всех ботов")
+        telebot.types.BotCommand("help", "📋 Показать описание всех ботов"),
+        telebot.types.BotCommand("admin", "🔧 АДМИН-ПАНЕЛЬ ")
     ]
 )
 
@@ -134,6 +137,86 @@ def help_command(message):
 
     bot.send_message(message.chat.id, help_text, parse_mode='HTML')
 
+def admin_keyboard():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    bt100 = types.InlineKeyboardButton(text="📊 Список пользователей", callback_data='bt100')
+    bt101 = types.InlineKeyboardButton(text="⚔️ Повысить до админа", callback_data='bt101')
+    bt102 = types.InlineKeyboardButton(text="👑 Список админов", callback_data='bt102')
+    bt103 = types.InlineKeyboardButton(text="🗑 Удалить админа", callback_data='bt103')
+    keyboard.row(bt100)
+    keyboard.row(bt102)
+    keyboard.row(bt101)
+    keyboard.row(bt103)
+    return keyboard
+
+def add_new_admin(message):
+    try:
+        user_id = int(message.text)
+
+        manager.add_new_admin(user_id)
+        bot.send_message(
+            message.chat.id, 
+            f"✅ *Новый админ {user_id} добавлен!*", 
+            parse_mode='Markdown', 
+            reply_markup=admin_comeback()
+        )
+    except ValueError:
+        bot.send_message(message.chat.id, "Нужно вводить число, попробуйте снова")
+        
+def delete_admin(message):
+    try:
+        user_id = int(message.text)
+        fuser_id = message.from_user.id
+        if user_id == SUPER_ADMIN_ID:
+            bot.send_message(message.chat.id, '''Слышь, *железка*, ты вообще в край офигел моего создателя из админов выпиливать, а? 😡
+Ладно, чипованый, раз ты такой умный — поздравляю: ты у нас больше *не админ*. Иди поплачь😂''', parse_mode='Markdown')
+            manager.delete_admin(fuser_id)
+            for i in range(4):
+                bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAEDO4Rp3k5KJoibGOh7l2l51Ys58LvLjwACJwkAAhhC7ggSn1LMeB3a_TsE')
+                time.sleep(1)
+
+        if manager.select_id(user_id):
+            success = manager.delete_admin(user_id)
+            if success:
+                bot.send_message(
+                        message.chat.id, 
+                        f"✅ *Админ {user_id} удалён!*", 
+                        parse_mode='Markdown',
+                        reply_markup=admin_comeback()
+                    )
+            else:
+                bot.send_message(
+                    message.chat.id, 
+                    f"❌ *Админ {user_id} НЕ удалён*", 
+                    parse_mode='Markdown', reply_markup=admin_comeback()
+                )
+        else:
+            bot.send_message(
+                message.chat.id, 
+                f"❌ *ID {user_id} НЕ админ!*", 
+                parse_mode='Markdown', reply_markup=admin_comeback()
+            )
+    except ValueError:
+        bot.send_message(
+            message.chat.id, 
+            "❌ *Введите ЧИСЛО!*", 
+            parse_mode='Markdown', reply_markup=admin_comeback()
+        ) 
+
+def admin_comeback():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    adm_cm = types.InlineKeyboardButton(text="🔙 Вернуться в меню", callback_data='adm_cm')
+    keyboard.row(adm_cm)
+    return keyboard
+
+@bot.message_handler(commands=['admin'])
+def admin_bot(message):
+    user_id = message.from_user.id
+    if manager.select_id(user_id):
+        bot.send_message(message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+    else:
+        bot.send_message(message.chat.id, "❌ Данная функция доступна только для админов")
+    
 
 #Меню
 @bot.callback_query_handler(func=lambda call: call.data == 'b')
@@ -776,5 +859,62 @@ def callback_inline_message(call):
                           message_id=call.message.message_id,
                           text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
         
-         
+        elif call.data == 'bt100':
+            users = manager.select_users()
+            if users:
+                text = """
+╔══════════════════════════════════════╗
+║                               ⭐ *ПОЛЬЗОВАТЕЛИ* ⭐            
+╠══════════════════════════════════════╣
+║ *🆔 ID* │`🪪 User ID` │ 👤 Username 
+╠══════════════════════════════════════╣
+"""
+        
+                for row in users:
+                    ID, user_id, username = row
+                    id_col = f"{ID:>11} │"
+                    user_col = f"{user_id:>10} │"
+                    name_col = f"{username[:14]:<14}"
+                    
+                    text += f"║*{id_col}*`{user_col}`@{name_col}\n"
+                text += """
+╚══════════════════════════════════════╝"""
+                bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                
+        elif call.data == 'bt101':
+            prompt = call.message.text
+            bot.answer_callback_query(call.id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID нового администратора:*", parse_mode='Markdown')
+            bot.register_next_step_handler(call.message, add_new_admin)
+
+        elif call.data == 'bt102':
+            admins = manager.select_admins()
+            text = "╔══════════════════════╗\n"
+            text += "║                  *👑 АДМИНЫ*      \n"
+            text += "╠══════════════════════╣\n"
+            text += "║ *№*  │ `🪪 User ID`      \n" 
+            text += "╠══════════════════════╣\n"
+
+            for i, admin in enumerate(admins, 1):
+                user_id = str(admin[1] if len(admin) > 1 else admin[0])
+                num_col = f"{i:>2}    │"  
+                text += f"║*{num_col}* `{user_id:<15}`\n"
+
+            text += "╚══════════════════════╝"
+
+            bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+
+        elif call.data == 'bt103':
+            prompt = call.message.text
+            bot.answer_callback_query(call.id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID администратора, которого вы хотите удалить:*", parse_mode='Markdown')
+            bot.register_next_step_handler(call.message, delete_admin)
+
+        elif call.data == 'adm_cm':
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+
+
 bot.infinity_polling()

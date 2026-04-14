@@ -17,17 +17,20 @@ class DB_service():
                     ID INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER UNIQUE NOT NULL,
                     chat_id INTEGER NOT NULL,
-                    username TEXT NOT NULL) """)
+                    username TEXT NOT NULL
+                    ) """)
             
             cur.execute(""" CREATE TABLE IF NOT EXISTS prompts (
                         user_id INTEGER,
                         user_prompt TEXT NOT NULL,
-                        AI_answer TEXT NOT NULL) """)
+                        AI_answer TEXT NOT NULL
+                    ) """)
             
             cur.execute(""" CREATE TABLE IF NOT EXISTS leonardo_prompts (
                             user_id INTEGER,
                             prompt TEXT NOT NULL,
-                            username TEXT) """)
+                            username TEXT
+                    ) """)
             
             cur.execute('''CREATE TABLE IF NOT EXISTS active_games (
                         chat_id INTEGER PRIMARY KEY, 
@@ -41,7 +44,13 @@ class DB_service():
                         best_score INTEGER, 
                         last_play TEXT
                     )''')
+            
+            cur.execute('''CREATE TABLE IF NOT EXISTS ADMINS (
+                    user_id INTEGER UNIQUE NOT NULL
+                    )''')
+            
             conn.commit()
+            
     
     def start_game(self, chat_id, bot_choice):
         with sqlite3.connect(self.database) as conn:
@@ -110,6 +119,37 @@ class DB_service():
                         VALUES (?, ?, ?)''', (user_id, prompt, username))
             conn.commit()
             
+    def select_users(self):
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            cur.execute('''SELECT ID, user_id, username FROM users''')
+            return cur.fetchall() 
+
+    def add_new_admin(self, user_id):
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            cur.execute('''INSERT OR IGNORE INTO ADMINS (user_id) VALUES (?)''', (user_id,))
+            conn.commit()
+
+    def select_id(self, user_id):
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            cur.execute('''SELECT EXISTS(SELECT 1 FROM ADMINS WHERE user_id = ?)''', (user_id,))
+            return cur.fetchone()[0] == 1
+
+    def select_admins(self):
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            cur.execute('''SELECT user_id FROM ADMINS''')
+            return cur.fetchall()
+        
+    def delete_admin(self, user_id):
+        with sqlite3.connect(self.database) as conn:
+            cur = conn.cursor()
+            cur.execute('''DELETE FROM ADMINS WHERE user_id = ?''', (user_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
 if __name__ == '__main__':
     manager = DB_service(DATABASE)
     manager.create_tables()

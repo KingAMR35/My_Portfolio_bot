@@ -2,13 +2,15 @@ import telebot
 import os
 import base64
 import tempfile
-import cv2
+import io
 import random
+from PIL import Image, ImageFilter
 from gtts import gTTS
 import wikipedia
 import randfacts
 import validators
 import pyqrcode
+import time
 from dotenv import load_dotenv
 from db_service import DB_service
 from pathlib import Path
@@ -28,6 +30,7 @@ tts_sessions = {}
 wiki_sessions = {}
 QR_sessions = {}
 blur_session = {}
+SUPER_ADMIN_ID = 5213315899
 
 manager = DB_service(os.getenv('DATABASE'))
 manager.create_tables()
@@ -35,6 +38,8 @@ manager.create_tables()
 bot.set_my_commands(
     commands=[
         telebot.types.BotCommand("start", "🚀 Запускает бота"),
+        telebot.types.BotCommand("help", "📋 Показать описание всех ботов"),
+        telebot.types.BotCommand("admin", "🔧 АДМИН-ПАНЕЛЬ ")
     ]
 )
 
@@ -93,7 +98,7 @@ def start_bot(message):
     b = types.InlineKeyboardButton(text="📋Открыть меню", callback_data='b')
     keyboard.row(b)
     bot.send_message(message.chat.id, a, parse_mode='HTML', reply_markup=keyboard)
-    
+
 @bot.message_handler(commands=['help'])
 def help_command(message):
     help_text = f"""<strong>📋 Что умеют мои боты</strong>
@@ -131,7 +136,88 @@ def help_command(message):
 <strong>💻 Управление: /start /stop /help</strong>"""
 
     bot.send_message(message.chat.id, help_text, parse_mode='HTML')
+
+def admin_keyboard():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    bt100 = types.InlineKeyboardButton(text="📊 Список пользователей", callback_data='bt100')
+    bt101 = types.InlineKeyboardButton(text="⚔️ Повысить до админа", callback_data='bt101')
+    bt102 = types.InlineKeyboardButton(text="👑 Список админов", callback_data='bt102')
+    bt103 = types.InlineKeyboardButton(text="🗑 Удалить админа", callback_data='bt103')
+    keyboard.row(bt100)
+    keyboard.row(bt102)
+    keyboard.row(bt101)
+    keyboard.row(bt103)
+    return keyboard
+
+def add_new_admin(message):
+    try:
+        user_id = int(message.text)
+
+        manager.add_new_admin(user_id)
+        bot.send_message(
+            message.chat.id, 
+            f"✅ *Новый админ {user_id} добавлен!*", 
+            parse_mode='Markdown', 
+            reply_markup=admin_comeback()
+        )
+    except ValueError:
+        bot.send_message(message.chat.id, "Нужно вводить число, попробуйте снова")
+        
+def delete_admin(message):
+    try:
+        user_id = int(message.text)
+        fuser_id = message.from_user.id
+        if user_id == SUPER_ADMIN_ID:
+            bot.send_message(message.chat.id, '''Слышь, *железка*, ты вообще в край офигел моего создателя из админов выпиливать, а? 😡
+Ладно, чипованый, раз ты такой умный — поздравляю: ты у нас больше *не админ*. Иди поплачь😂''', parse_mode='Markdown')
+            manager.delete_admin(fuser_id)
+            for i in range(4):
+                bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAEDO4Rp3k5KJoibGOh7l2l51Ys58LvLjwACJwkAAhhC7ggSn1LMeB3a_TsE')
+                time.sleep(1)
+
+        if manager.select_id(user_id):
+            success = manager.delete_admin(user_id)
+            if success:
+                bot.send_message(
+                        message.chat.id, 
+                        f"✅ *Админ {user_id} удалён!*", 
+                        parse_mode='Markdown',
+                        reply_markup=admin_comeback()
+                    )
+            else:
+                bot.send_message(
+                    message.chat.id, 
+                    f"❌ *Админ {user_id} НЕ удалён*", 
+                    parse_mode='Markdown', reply_markup=admin_comeback()
+                )
+        else:
+            bot.send_message(
+                message.chat.id, 
+                f"❌ *ID {user_id} НЕ админ!*", 
+                parse_mode='Markdown', reply_markup=admin_comeback()
+            )
+    except ValueError:
+        bot.send_message(
+            message.chat.id, 
+            "❌ *Введите ЧИСЛО!*", 
+            parse_mode='Markdown', reply_markup=admin_comeback()
+        ) 
+
+def admin_comeback():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    adm_cm = types.InlineKeyboardButton(text="🔙 Вернуться в меню", callback_data='adm_cm')
+    keyboard.row(adm_cm)
+    return keyboard
+
+@bot.message_handler(commands=['admin'])
+def admin_bot(message):
+    user_id = message.from_user.id
+    if manager.select_id(user_id):
+        bot.send_message(message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+    else:
+        bot.send_message(message.chat.id, "❌ Данная функция доступна только для админов")
     
+
 #Меню
 @bot.callback_query_handler(func=lambda call: call.data == 'b')
 def menu_bot(call):
@@ -273,7 +359,7 @@ def bt_3(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text=f'''<strong>Привет👋!</strong>
-                
+
 <blockquote>Отправь мне любую картинку, и я сделаю её мягкой и загадочной, добавив лёгкую дымку. Получишь красивую и атмосферную фотографию <strong>с эффектом блюра!</strong> ✨</blockquote>
 
 <strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>
@@ -301,7 +387,7 @@ def bt_5(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
-                    
+
 <blockquote>Перед вами бот, превращающий текст в аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
 
 <strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>''', parse_mode='HTML', reply_markup=cm_back())
@@ -319,7 +405,7 @@ def bt_7(call):
 📚 Любопытствуете о событиях прошлого века, хотите освежить знания по биологии или выяснить происхождение термина? Всё, что вам нужно — это задать вопрос, и я моментально пришлю ответ!</blockquote>
 
 Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
-    
+
 #Rand_fact_bot
 def dalee():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -371,10 +457,10 @@ def bt_9(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
-                
-<blockquote>Меня зовут Jokes_bot, и я создан, чтобы поднять тебе настроение и зарядить позитивом!  
 
-Нажми на кнопку — и я немедленно пришлю тебе отличную шутку, которая заставит улыбнуться или рассмеяться.</blockquote> 
+<blockquote>Меня зовут Jokes_bot, и я создан, чтобы поднять тебе настроение и зарядить позитивом!
+
+Нажми на кнопку — и я немедленно пришлю тебе отличную шутку, которая заставит улыбнуться или рассмеяться.</blockquote>
 
 <strong>Хорошее настроение гарантировано! 🚀</strong>''', parse_mode='HTML', reply_markup=joke())
 
@@ -388,10 +474,10 @@ def bt_10(call):
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
-                
+
 <blockquote>Меня зовут <strong>QR_creator_bot</strong>, и я — твой личный помощник по созданию QR-кодов. Моя задача — превращать любые ссылки в удобные и стильные коды за пару секунд.
 
-Больше не нужно копировать и отправлять длинные, неудобные URL-адреса, которые вечно ломаются в сообщениях. Просто пришли мне любую ссылку — на интересную статью, видео, твой профиль в социальной сети или интернет-магазин — и я мгновенно сгенерирую для тебя QR-код.</blockquote> 
+Больше не нужно копировать и отправлять длинные, неудобные URL-адреса, которые вечно ломаются в сообщениях. Просто пришли мне любую ссылку — на интересную статью, видео, твой профиль в социальной сети или интернет-магазин — и я мгновенно сгенерирую для тебя QR-код.</blockquote>
 
 <strong>Пришли мне свою ссылку, и я приступлю к работе! Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку🚀</strong>''', parse_mode='HTML', reply_markup=cm_back())
 
@@ -405,7 +491,7 @@ def bt11_keyboard():
     keyboard.row(leader)
     keyboard.row(cm_back)
     return keyboard
-    
+
 def again_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     again = types.InlineKeyboardButton(text='Еще раз', callback_data='game')
@@ -415,7 +501,7 @@ def again_keyboard():
     keyboard.row(game_menu)
     keyboard.row(cm_back)
     return keyboard
-    
+
 @bot.callback_query_handler(func=lambda call: call.data == 'bt11')
 def bt_11(call):
     welcome_text = f'''<strong>Привет👋</strong>
@@ -433,58 +519,58 @@ def guess(message):
     chat_id = message.chat.id
     username = message.from_user.username
     game = manager.get_game(chat_id)
-    
+
     user_choice = int(message.text)
     attempts = game[2] + 1
     manager.save_attempt(chat_id, attempts)
     bot_choice = game[1]
-    
+
     if bot_choice > user_choice:
         bot.send_message(chat_id, f'<b>📈 Число больше</b>\nПопыток: <code>{attempts}</code>', parse_mode='HTML')
     elif bot_choice < user_choice:
         bot.send_message(chat_id, f'<b>📉 Число меньше</b>\nПопыток: <code>{attempts}</code>', parse_mode='HTML')
     else:
         manager.end_game(chat_id, username, attempts)
-        bot.send_message(chat_id, f'<b>🎉 Поздравляем!</b>\nУгадали за <code>{attempts}</code> попыток!', 
+        bot.send_message(chat_id, f'<b>🎉 Поздравляем!</b>\nУгадали за <code>{attempts}</code> попыток!',
                         parse_mode='HTML', reply_markup=again_keyboard())
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     chat_id = message.chat.id
-    
+
     if blur_session.get(chat_id, False):
-        file_id = message.photo[-1].file_id
-        file_info = bot.get_file(file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
+        try:
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
 
-        temp_file = TEMP_FOLDER / f"{file_id}.jpg"
-        with open(temp_file, 'wb') as f:
-            f.write(downloaded_file)
+            # PIL вместо OpenCV
+            img = Image.open(io.BytesIO(downloaded_file)).convert('RGB')
 
-        image = cv2.imread(str(temp_file))
+            # Gaussian Blur
+            blurred = img.filter(ImageFilter.GaussianBlur(radius=8))
 
-        if image is None:
-            bot.reply_to(message, "Не удалось распознать изображение.")
-            return
+            # Дополнительно: Pixelation эффект
+            small = blurred.resize((20, 20), Image.Resampling.LANCZOS)
+            pixelated = small.resize(img.size, Image.Resampling.NEAREST)
+            result = Image.blend(blurred, pixelated, 0.7)
 
-        blurred_image = cv2.GaussianBlur(image, (15, 15), 0)
-        pixelated_image = cv2.resize(blurred_image, (30, 30), interpolation=cv2.INTER_NEAREST)
-        pixelated_image = cv2.resize(pixelated_image, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
-        processed_temp_file = TEMP_FOLDER / f"{file_id}_processed.jpg"
-        cv2.imwrite(str(processed_temp_file), pixelated_image)
+            # Отправка
+            bio = io.BytesIO()
+            result.save(bio, format='PNG', quality=95)
+            bio.seek(0)
 
-        with open(processed_temp_file, 'rb') as pf:
-            bot.send_photo(message.chat.id, pf, caption='Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨', reply_markup=AI_keyboard())
+            bot.send_photo(message.chat.id, bio, caption="Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨!")
 
-        temp_file.unlink(missing_ok=True)
-        processed_temp_file.unlink(missing_ok=True)    
+        except Exception as e:
+            bot.send_message(message.chat.id, f"❌ Ошибка: {str(e)}")
+
         return
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
-    
+
     if tts_sessions.get(chat_id, False):
         prompt = message.text.strip()
         tts = gTTS(text=prompt, lang='ru', slow=False)
@@ -495,7 +581,7 @@ def text_handler(message):
             bot.send_audio(message.chat.id, audio, reply_markup=AI_keyboard())
         os.remove(audio_file)
         bot.send_message(message.chat.id, "Готово! Отправьте следующий текст.")
-    
+
     elif wiki_sessions.get(chat_id, False):
         try:
             wikipedia.set_lang("ru")
@@ -503,16 +589,20 @@ def text_handler(message):
             bot.send_message(chat_id, f'`{res}`', parse_mode='Markdown', reply_markup=AI_keyboard())
         except wikipedia.exceptions.PageError:
             bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
+        except wikipedia.exceptions.DisambiguationError:
+            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
+        except Exception as e:
+            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
         return
-    
+
     elif AI_sessions.get(chat_id, False):
         user_prompt = f"{message.text}"
-            
+
         with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
             response = giga.chat(user_prompt)
             AI_answer = response.choices[0].message.content.strip()
         bot.send_message(message.chat.id, AI_answer, reply_markup=AI_keyboard(), parse_mode='Markdown')
-            
+
         manager.add_to_prompts(user_id, user_prompt, AI_answer)
         return
 
@@ -520,13 +610,13 @@ def text_handler(message):
         if is_link(message.text):
             text = message.text
             url = pyqrcode.create(text)
-            url.png('voices\QR.png', scale=8) 
-            with open('voices\QR.png', 'rb') as p:
+            url.png('voices/QR.png', scale=8)
+            with open('voices/QR.png', 'rb') as p:
                 bot.send_photo(message.chat.id, p, reply_markup=AI_keyboard())
         else:
             bot.reply_to(message, "❌ Это не ссылка.", reply_markup=AI_keyboard())
         return
-    
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -584,14 +674,14 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button5':
-            with open('images\\1.png', 'rb') as f:
+            with open('images/1.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Будущее»*\n
 С этим муралом художник Дмитрий Горшков стал финалистом фестиваля стрит-арта Приволжского федерального округа «ФормАт».
 По словам автора, Венера на картине символизирует жизненный опыт, а дирижабль — движение вперёд.
 Эта работа вдохновляет задуматься о том, что ждут в будущем школьники и какие цели ставят перед собой. 🌟""", parse_mode='Markdown', reply_markup=del_button())
 
         elif call.data == 'button6':
-            with open('images\\2.png', 'rb') as f:
+            with open('images/2.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🚀 Мурал в честь Юрия Гагарина*\n
 Этот потрясающий мурал посвящен первому космонавту Юрию Алексеевичу Гагарину.
 Яркое произведение служит не только почтением выдающемуся человеку, но и символом космической гордости России, поскольку именно Самара заслуженно носит звание Космической столицы.
@@ -599,7 +689,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button7':
-            with open('images\\3.png', 'rb') as f:
+            with open('images/3.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*👾 Лев Яшин*\n
 Этот мурал увековечил легендарного советского футболиста Льва Яшина, знаменитого своими невероятными вратарскими талантами и признанного одним из лучших голкиперов мира.
 Произведение подчеркивает значимость Яшина как спортивного кумира и выражает уважение к его огромному вкладу в российскую футбольную культуру.
@@ -608,7 +698,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button8':
-            with open('images\\4.png', 'rb') as f:
+            with open('images/4.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌿 «Чистый воздух»*\n
 Этот мурал не только придает городу красоту, но и несет глубокое символическое послание.
 Появившись в эпоху пандемии COVID-19, он становится важным напоминанием о ценности здоровья и охраны природы.
@@ -617,7 +707,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button008':
-            with open('images\\5.png', 'rb') as f:
+            with open('images/5.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🩺 «Благодарность врачам»*\n
 Этот мурал демонстрирует искреннее уважение к медикам, проявившим героизм и самоотверженность в борьбе с пандемией COVID-19.
 Детям можно рассказать о важности профессии врача и огромной роли медиков в нашем обществе, подчёркивая, насколько они важны для защиты здоровья населения.
@@ -627,7 +717,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button08':
-            with open('images\\6.png', 'rb') as f:
+            with open('images/6.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌥️ «Девушка, сидящая на облаках»*\n
 Приближаясь к этому муралу, начните разговор о его смысле и эмоциях, которые он вызывает.
 Задайте детям вопросы о том, что они видят на картинке: кто эта девушка, почему она расположилась на облаках и какое настроение, по их мнению, это передает?
@@ -637,7 +727,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button10':
-            with open('images\\7.png', 'rb') as f:
+            with open('images/7.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*✈️ Александр Петрович Мамкин*\n
 Мурал посвящён подвигу лётчика А.П. Мамкина, который в Великую Отечественную войну эвакуировал 90 детей с оккупированных территорий.
 Несмотря на жестокие испытания, он сумел посадить поврежденный самолёт и спасти малышей.
@@ -647,7 +737,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button11':
-            with open('images\\8.png', 'rb') as f:
+            with open('images/8.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌍 Герои народного ополчения*\n
 Мурал прославляет героев народного ополчения, служа украшением города и одновременно напоминанием о важном историческом событии, когда народ объединился для защиты Отечества.
 Обращаясь к детям рядом с этим муралом, предложите обсудить День народного единства: что он значит, какие события произошли тогда в истории России.
@@ -656,7 +746,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button12':
-            with open('images\\9.png', 'rb') as f:
+            with open('images/9.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Воспоминание»*\n
 Яркий и эмоциональный мурал приглашает зрителей погрузиться в размышления о человеческой памяти.
 Девушка на картине воплощает воспоминания разных моментов жизни, создающих мозаику характера и мировоззрения.
@@ -666,7 +756,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button13':
-            with open('images\\11.png', 'rb') as f:
+            with open('images/11.png', 'rb') as f:
                 bot.send_photo(call.message.chat.id, f, caption="""*🌳 «Древо жизни»*\n
 Этот оригинальный мурал напоминает знаменитую сказку «Алиса в Стране чудес»: яркое дерево и кошки с человечьими лицами создают необычную картину среди привычной серости самарского пейзажа.
 Обсудите с детьми, что значит для них понятие «Древо жизни».
@@ -719,7 +809,7 @@ def callback_inline_message(call):
             with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
                 response = giga.chat(prompt)
                 AI_answer = response.choices[0].message.content.strip()
-            bot.edit_message_text(chat_id=call.message.chat.id, 
+            bot.edit_message_text(chat_id=call.message.chat.id,
                         message_id=call.message.message_id,
                         text=f'`{AI_answer}`', reply_markup=joke2(), parse_mode='Markdown')
 
@@ -729,7 +819,7 @@ def callback_inline_message(call):
             bot_choice = random.randint(1, 100)
             manager.start_game(chat_id, bot_choice)
             bot.send_message(call.message.chat.id, '<b>✅ Игра начата!</b>\nОтправьте число.', parse_mode='HTML')
-            
+
         elif call.data == 'leader':
             top = manager.get_leaderboard()
             if top:
@@ -739,7 +829,7 @@ def callback_inline_message(call):
             else:
                 text = '*Лидерборд пуст*'
             bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
-            
+
         elif call.data == 'game_menu':
             welcome_text = f'''<strong>Привет👋</strong>
 
@@ -750,6 +840,62 @@ def callback_inline_message(call):
             bot.edit_message_text(chat_id=call.message.chat.id,
                           message_id=call.message.message_id,
                           text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
-            
-            
+
+        elif call.data == 'bt100':
+            users = manager.select_users()
+            if users:
+                text = """
+╔══════════════════════════════════════╗
+║                               ⭐ *ПОЛЬЗОВАТЕЛИ* ⭐            
+╠══════════════════════════════════════╣
+║ *🆔 ID* │`🪪 User ID` │ 👤 Username 
+╠══════════════════════════════════════╣
+"""
+        
+                for row in users:
+                    ID, user_id, username = row
+                    id_col = f"{ID:>11} │"
+                    user_col = f"{user_id:>10} │"
+                    name_col = f"{username[:14]:<14}"
+                    
+                    text += f"║*{id_col}*`{user_col}`@{name_col}\n"
+                text += """
+╚══════════════════════════════════════╝"""
+                bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                
+        elif call.data == 'bt101':
+            prompt = call.message.text
+            bot.answer_callback_query(call.id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID нового администратора:*", parse_mode='Markdown')
+            bot.register_next_step_handler(call.message, add_new_admin)
+
+        elif call.data == 'bt102':
+            admins = manager.select_admins()
+            text = "╔══════════════════════╗\n"
+            text += "║                  *👑 АДМИНЫ*      \n"
+            text += "╠══════════════════════╣\n"
+            text += "║ *№*  │ `🪪 User ID`      \n" 
+            text += "╠══════════════════════╣\n"
+
+            for i, admin in enumerate(admins, 1):
+                user_id = str(admin[1] if len(admin) > 1 else admin[0])
+                num_col = f"{i:>2}    │"  
+                text += f"║*{num_col}* `{user_id:<15}`\n"
+
+            text += "╚══════════════════════╝"
+
+            bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+
+        elif call.data == 'bt103':
+            prompt = call.message.text
+            bot.answer_callback_query(call.id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID администратора, которого вы хотите удалить:*", parse_mode='Markdown')
+            bot.register_next_step_handler(call.message, delete_admin)
+
+        elif call.data == 'adm_cm':
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            bot.send_message(call.message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+
 bot.infinity_polling()

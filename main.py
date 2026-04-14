@@ -174,34 +174,34 @@ def delete_admin(message):
             for i in range(4):
                 bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAEDO4Rp3k5KJoibGOh7l2l51Ys58LvLjwACJwkAAhhC7ggSn1LMeB3a_TsE')
                 time.sleep(1)
-
-        if manager.select_id(user_id):
-            success = manager.delete_admin(user_id)
-            if success:
-                bot.send_message(
+        else:
+            if manager.select_id(user_id):
+                success = manager.delete_admin(user_id)
+                if success:
+                    bot.send_message(
+                            message.chat.id, 
+                            f"✅ *Админ {user_id} удалён!*", 
+                            parse_mode='Markdown',
+                            reply_markup=admin_comeback()
+                        )
+                else:
+                    bot.send_message(
                         message.chat.id, 
-                        f"✅ *Админ {user_id} удалён!*", 
-                        parse_mode='Markdown',
-                        reply_markup=admin_comeback()
+                        f"❌ *Админ {user_id} НЕ удалён*", 
+                        parse_mode='Markdown', reply_markup=admin_comeback()
                     )
             else:
                 bot.send_message(
                     message.chat.id, 
-                    f"❌ *Админ {user_id} НЕ удалён*", 
+                    f"❌ *ID {user_id} НЕ админ!*", 
                     parse_mode='Markdown', reply_markup=admin_comeback()
                 )
-        else:
-            bot.send_message(
-                message.chat.id, 
-                f"❌ *ID {user_id} НЕ админ!*", 
-                parse_mode='Markdown', reply_markup=admin_comeback()
-            )
     except ValueError:
         bot.send_message(
             message.chat.id, 
             "❌ *Введите ЧИСЛО!*", 
             parse_mode='Markdown', reply_markup=admin_comeback()
-        ) 
+            ) 
 
 def admin_comeback():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -860,9 +860,11 @@ def callback_inline_message(call):
                           text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
         
         elif call.data == 'bt100':
-            users = manager.select_users()
-            if users:
-                text = """
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                users = manager.select_users()
+                if users:
+                    text = """
 ╔══════════════════════════════════════╗
 ║                               ⭐ *ПОЛЬЗОВАТЕЛИ* ⭐            
 ╠══════════════════════════════════════╣
@@ -870,51 +872,69 @@ def callback_inline_message(call):
 ╠══════════════════════════════════════╣
 """
         
-                for row in users:
-                    ID, user_id, username = row
-                    id_col = f"{ID:>11} │"
-                    user_col = f"{user_id:>10} │"
-                    name_col = f"{username[:14]:<14}"
+                    for row in users:
+                        ID, user_id, username = row
+                        id_col = f"{ID:>11} │"
+                        user_col = f"{user_id:>10} │"
+                        name_col = f"{username[:14]:<14}"
                     
-                    text += f"║*{id_col}*`{user_col}`@{name_col}\n"
-                text += """
+                        text += f"║*{id_col}*`{user_col}`@{name_col}\n"
+                    text += """
 ╚══════════════════════════════════════╝"""
-                bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                    bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
                 
         elif call.data == 'bt101':
-            prompt = call.message.text
-            bot.answer_callback_query(call.id)
-            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID нового администратора:*", parse_mode='Markdown')
-            bot.register_next_step_handler(call.message, add_new_admin)
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                prompt = call.message.text
+                bot.answer_callback_query(call.id)
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                bot.send_message(call.message.chat.id, "*👤 Введите USER_ID нового администратора:*", parse_mode='Markdown')
+                bot.register_next_step_handler(call.message, add_new_admin)
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
 
         elif call.data == 'bt102':
-            admins = manager.select_admins()
-            text = "╔══════════════════════╗\n"
-            text += "║                  *👑 АДМИНЫ*      \n"
-            text += "╠══════════════════════╣\n"
-            text += "║ *№*  │ `🪪 User ID`      \n" 
-            text += "╠══════════════════════╣\n"
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                admins = manager.select_admins()
+                text = "╔══════════════════════╗\n"
+                text += "║                  *👑 АДМИНЫ*      \n"
+                text += "╠══════════════════════╣\n"
+                text += "║ *№*  │ `🪪 User ID`      \n" 
+                text += "╠══════════════════════╣\n"
 
-            for i, admin in enumerate(admins, 1):
-                user_id = str(admin[1] if len(admin) > 1 else admin[0])
-                num_col = f"{i:>2}    │"  
-                text += f"║*{num_col}* `{user_id:<15}`\n"
+                for i, admin in enumerate(admins, 1):
+                    user_id = str(admin[1] if len(admin) > 1 else admin[0])
+                    num_col = f"{i:>2}    │"  
+                    text += f"║*{num_col}* `{user_id:<15}`\n"
 
-            text += "╚══════════════════════╝"
+                text += "╚══════════════════════╝"
 
-            bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
 
         elif call.data == 'bt103':
-            prompt = call.message.text
-            bot.answer_callback_query(call.id)
-            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            bot.send_message(call.message.chat.id, "*👤 Введите USER_ID администратора, которого вы хотите удалить:*", parse_mode='Markdown')
-            bot.register_next_step_handler(call.message, delete_admin)
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                prompt = call.message.text
+                bot.answer_callback_query(call.id)
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                bot.send_message(call.message.chat.id, "*👤 Введите USER_ID администратора, которого вы хотите удалить:*", parse_mode='Markdown')
+                bot.register_next_step_handler(call.message, delete_admin)
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
+            
 
         elif call.data == 'adm_cm':
-            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            bot.send_message(call.message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
-
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                bot.send_message(call.message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
 
 bot.infinity_polling()

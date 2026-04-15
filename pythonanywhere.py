@@ -25,11 +25,7 @@ a = os.getenv("CREDENTIALS")
 encoded_credentials = base64.b64encode(a.encode()).decode()
 
 TEMP_FOLDER = Path(tempfile.gettempdir())
-AI_sessions = {}
-tts_sessions = {}
-wiki_sessions = {}
-QR_sessions = {}
-blur_session = {}
+user_sessions = {}
 SUPER_ADMIN_ID = 5213315899
 
 manager = DB_service(os.getenv('DATABASE'))
@@ -229,11 +225,7 @@ def menu_bot(call):
 
 @bot.message_handler(commands=['stop'])
 def stop_command(message):
-    AI_sessions.pop(message.chat.id, None)
-    tts_sessions.pop(message.chat.id, None)
-    wiki_sessions.pop(message.chat.id, None)
-    QR_sessions.pop(message.chat.id, None)
-    blur_session.pop(message.chat.id, None)
+    user_sessions.pop(message.from_user.id, None)
     bot.send_message(message.chat.id, "Работа остановлена.")
 
 #MurArt_Samara_bot
@@ -327,11 +319,7 @@ def AI_keyboard():
 
 @bot.message_handler(func=lambda m: m.text == "🛑Остановить")
 def stop_button(message):
-    AI_sessions.pop(message.chat.id, None)
-    tts_sessions.pop(message.chat.id, None)
-    wiki_sessions.pop(message.chat.id, None)
-    QR_sessions.pop(message.chat.id, None)
-    blur_session.pop(message.chat.id, None)
+    user_sessions.pop(message.from_user.id, None)
     bot.send_message(message.chat.id, "Работа остановлена.")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'bt1')
@@ -345,17 +333,17 @@ def bt1(call):
 #AI_assistant_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt2')
 def bt2(call):
-    AI_sessions[call.message.chat.id] = True
+    user_sessions[call.from_user.id] = "AI_assistant"
     bot.edit_message_text(chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             text=f'''Привет👋!\n
-<blockquote>Я твой консультант, и я готов помочь тебе разобраться в сложных ситуациях, дать полезные советы и предложить оптимальные решения. 🚀</blockquote>\n
+<blockquote>Меня зовут <strong>AI_assistant_bot</strong>. Я твой консультант, и я готов помочь тебе разобраться в сложных ситуациях, дать полезные советы и предложить оптимальные решения. 🚀</blockquote>\n
 Просто напиши своё сообщение, чтобы начать диалог!\n\nЧтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку''', parse_mode='HTML', reply_markup=cm_back())
 
 #Blur_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt3')
 def bt_3(call):
-    blur_session[call.message.chat.id] = True
+    user_sessions[call.from_user.id] = "blur"
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text=f'''<strong>Привет👋!</strong>
@@ -383,24 +371,24 @@ def bt_4(call):
 #Text_To_Voice_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt5')
 def bt_5(call):
-    tts_sessions[call.message.chat.id] = True
+    user_sessions[call.from_user.id] = "tts"
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
 
-<blockquote>Перед вами бот, превращающий текст в аудио! Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
+<blockquote>Перед вами бот, превращающий <strong>текст в аудио!</strong> Просто отправьте текст, и получите голосовое сообщение с идеальной дикцией и четкостью звука.</blockquote>
 
 <strong>Чтобы закончить, напишите или нажмите /stop, также, вы можете нажать на кнопку</strong>''', parse_mode='HTML', reply_markup=cm_back())
 
 #Wikipedia_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt7')
 def bt_7(call):
-    wiki_sessions[call.message.chat.id] = True
+    user_sessions[call.from_user.id] = "wiki"
     bot.edit_message_text(chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     text='''<strong>Привет👋!</strong>
 
-<blockquote>Меня зовут Wikipedia_bot, и я тут, чтобы оперативно доставлять самую свежую и точную информацию из самой обширной энциклопедии планеты — Wikipedia.
+<blockquote>Меня зовут <strong>Wikipedia_bot</strong>, и я тут, чтобы оперативно доставлять самую свежую и точную информацию из самой обширной энциклопедии планеты — Wikipedia.
 
 📚 Любопытствуете о событиях прошлого века, хотите освежить знания по биологии или выяснить происхождение термина? Всё, что вам нужно — это задать вопрос, и я моментально пришлю ответ!</blockquote>
 
@@ -429,7 +417,7 @@ def bt_8(call):
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
 
-<blockquote>Меня зовут Rand_fact_bot, и я собираюсь подарить тебе море интересных фактов
+<blockquote>Меня зовут <strong>Rand_fact_bot</strong>, и я собираюсь подарить тебе море интересных фактов
 
 Просто нажми на кнопку — и я незамедлительно пришлю тебе увлекательные факт о мире.
 
@@ -458,7 +446,7 @@ def bt_9(call):
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
 
-<blockquote>Меня зовут Jokes_bot, и я создан, чтобы поднять тебе настроение и зарядить позитивом!
+<blockquote>Меня зовут <strong>Jokes_bot</strong>, и я создан, чтобы поднять тебе настроение и зарядить позитивом!
 
 Нажми на кнопку — и я немедленно пришлю тебе отличную шутку, которая заставит улыбнуться или рассмеяться.</blockquote>
 
@@ -470,7 +458,7 @@ def is_link(text):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'bt10')
 def bt_10(call):
-    QR_sessions[call.message.chat.id] = True
+    user_sessions[call.from_user.id] = "QR"
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 text='''<strong>Привет👋!</strong>
@@ -536,9 +524,9 @@ def guess(message):
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
-    chat_id = message.chat.id
-
-    if blur_session.get(chat_id, False):
+    user_id = message.from_user.id
+    
+    if user_sessions.get(user_id) == "blur":
         try:
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
@@ -568,55 +556,53 @@ def handle_photo(message):
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
-    user_id = message.from_user.id
     chat_id = message.chat.id
-
-    if tts_sessions.get(chat_id, False):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    
+    if user_sessions.get(user_id) == "tts":
         prompt = message.text.strip()
         tts = gTTS(text=prompt, lang='ru', slow=False)
-        audio_file = 'voices/output.mp3'
+        audio_file = 'voices/audio.mp3'
         os.makedirs('voices', exist_ok=True)
         tts.save(audio_file)
         with open(audio_file, 'rb') as audio:
             bot.send_audio(message.chat.id, audio, reply_markup=AI_keyboard())
         os.remove(audio_file)
         bot.send_message(message.chat.id, "Готово! Отправьте следующий текст.")
-
-    elif wiki_sessions.get(chat_id, False):
+    
+    elif user_sessions.get(user_id) == "wiki":
         try:
+            manager.create_user(user_id, chat_id, username)
             wikipedia.set_lang("ru")
             res = wikipedia.summary(message.text, sentences=3)
             bot.send_message(chat_id, f'`{res}`', parse_mode='Markdown', reply_markup=AI_keyboard())
         except wikipedia.exceptions.PageError:
-            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
-        except wikipedia.exceptions.DisambiguationError:
-            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
-        except Exception as e:
-            bot.send_message(chat_id, "❌ Информация не найдена в Wikipedia.")
+            bot.send_message(chat_id, "❌ Информация в Wikipedia не найдена.")
         return
-
-    elif AI_sessions.get(chat_id, False):
+    
+    elif user_sessions.get(user_id) == 'AI_assistant':
         user_prompt = f"{message.text}"
-
+            
         with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
             response = giga.chat(user_prompt)
             AI_answer = response.choices[0].message.content.strip()
         bot.send_message(message.chat.id, AI_answer, reply_markup=AI_keyboard(), parse_mode='Markdown')
-
+            
         manager.add_to_prompts(user_id, user_prompt, AI_answer)
         return
-
-    elif QR_sessions.get(chat_id, False):
+    
+    elif user_sessions.get(user_id) == 'QR':
         if is_link(message.text):
             text = message.text
             url = pyqrcode.create(text)
-            url.png('voices/QR.png', scale=8)
-            with open('voices/QR.png', 'rb') as p:
+            url.png('voices\QR.png', scale=8) 
+            with open('voices\QR.png', 'rb') as p:
                 bot.send_photo(message.chat.id, p, reply_markup=AI_keyboard())
         else:
             bot.reply_to(message, "❌ Это не ссылка.", reply_markup=AI_keyboard())
         return
-
+        
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -910,7 +896,6 @@ def callback_inline_message(call):
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
             
-
         elif call.data == 'adm_cm':
             user_id = call.from_user.id
             if manager.select_id(user_id):

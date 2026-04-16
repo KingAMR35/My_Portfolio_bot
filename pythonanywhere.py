@@ -35,7 +35,7 @@ bot.set_my_commands(
     commands=[
         telebot.types.BotCommand("start", "🚀 Запускает бота"),
         telebot.types.BotCommand("help", "📋 Показать описание всех ботов"),
-        telebot.types.BotCommand("admin", "🔧 АДМИН-ПАНЕЛЬ ")
+        telebot.types.BotCommand("admin", "🔧 Админ-панель ")
     ]
 )
 
@@ -205,15 +205,31 @@ def admin_comeback():
     keyboard.row(adm_cm)
     return keyboard
 
+def choose_bd():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    tel1 = types.InlineKeyboardButton(text="📱 Версия для телефона", callback_data='tel1')
+    pk1 = types.InlineKeyboardButton(text="💻 Версия для ПК", callback_data='pk1')
+    keyboard.row(tel1)
+    keyboard.row(pk1)
+    return keyboard
+
+def choose_bd2():
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    tel2 = types.InlineKeyboardButton(text="📱 Версия для телефона", callback_data='tel2')
+    pk2 = types.InlineKeyboardButton(text="💻 Версия для ПК", callback_data='pk2')
+    keyboard.row(tel2)
+    keyboard.row(pk2)
+    return keyboard
+
 @bot.message_handler(commands=['admin'])
 def admin_bot(message):
     user_id = message.from_user.id
     if manager.select_id(user_id):
-        bot.send_message(message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+        bot.send_message(message.chat.id, '''<strong>🎮 Админский джойстик АКТИВИРОВАН!</strong>\n
+<blockquote><strong>⚠️ Смотри не натвори ничего! 😈</strong></blockquote>''', reply_markup=admin_keyboard(), parse_mode='HTML')
     else:
         bot.send_message(message.chat.id, "❌ Данная функция доступна только для админов")
     
-
 #Меню
 @bot.callback_query_handler(func=lambda call: call.data == 'b')
 def menu_bot(call):
@@ -397,7 +413,7 @@ def bt_7(call):
 #Rand_fact_bot
 def dalee():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    dalee = types.InlineKeyboardButton(text="Следующий факт", callback_data='random_facts')
+    dalee = types.InlineKeyboardButton(text="➡️ Следующий факт", callback_data='random_facts')
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(dalee)
     keyboard.row(cm_back)
@@ -405,7 +421,7 @@ def dalee():
 
 def random_facts():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    random_facts = random_facts = types.InlineKeyboardButton(text="Рандомные факты", callback_data='random_facts')
+    random_facts = random_facts = types.InlineKeyboardButton(text="🧠 Рандомные факты", callback_data='random_facts')
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(random_facts)
     keyboard.row(cm_back)
@@ -426,7 +442,7 @@ def bt_8(call):
 #Jokes_bot
 def joke():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    joke_start = types.InlineKeyboardButton(text="Шутки", callback_data='joke_start')
+    joke_start = types.InlineKeyboardButton(text="😂 Шутки", callback_data='joke_start')
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(joke_start)
     keyboard.row(cm_back)
@@ -434,7 +450,7 @@ def joke():
 
 def joke2():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    joke_start = types.InlineKeyboardButton(text="Следующая шутка", callback_data='joke_start')
+    joke_start = types.InlineKeyboardButton(text="➡️ Следующая шутка", callback_data='joke_start')
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(joke_start)
     keyboard.row(cm_back)
@@ -472,8 +488,8 @@ def bt_10(call):
 #Game_bot
 def bt11_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    game = types.InlineKeyboardButton(text='Начать игру', callback_data='game')
-    leader = types.InlineKeyboardButton(text='Посмотреть топ игроков', callback_data='leader')
+    game = types.InlineKeyboardButton(text='🎮 Начать игру', callback_data='game')
+    leader = types.InlineKeyboardButton(text='🏆 Посмотреть топ игроков', callback_data='leader')
     cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(game)
     keyboard.row(leader)
@@ -482,10 +498,12 @@ def bt11_keyboard():
 
 def again_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    again = types.InlineKeyboardButton(text='Еще раз', callback_data='game')
-    game_menu = types.InlineKeyboardButton(text='Вернуться в игровое меню', callback_data='game_menu')
-    cm_back = types.InlineKeyboardButton(text="📋Вернуться в главное меню", callback_data='cm_back')
+    again = types.InlineKeyboardButton(text='🔄 Еще раз', callback_data='game')
+    leader = types.InlineKeyboardButton(text='🏆 Посмотреть топ игроков', callback_data='leader')
+    game_menu = types.InlineKeyboardButton(text='🏠 Вернуться в игровое меню', callback_data='game_menu')
+    cm_back = types.InlineKeyboardButton(text="📋 Вернуться в главное меню", callback_data='cm_back')
     keyboard.row(again)
+    keyboard.row(leader)
     keyboard.row(game_menu)
     keyboard.row(cm_back)
     return keyboard
@@ -596,8 +614,8 @@ def text_handler(message):
         if is_link(message.text):
             text = message.text
             url = pyqrcode.create(text)
-            url.png('voices\QR.png', scale=8) 
-            with open('voices\QR.png', 'rb') as p:
+            url.png('voices/QR.png', scale=8) 
+            with open('voices/QR.png', 'rb') as p:
                 bot.send_photo(message.chat.id, p, reply_markup=AI_keyboard())
         else:
             bot.reply_to(message, "❌ Это не ссылка.", reply_markup=AI_keyboard())
@@ -827,32 +845,62 @@ def callback_inline_message(call):
                           message_id=call.message.message_id,
                           text=welcome_text, parse_mode='HTML', reply_markup=bt11_keyboard())
 
-        elif call.data == 'bt100':
+        elif call.data == 'tel1':
+            #Для телефона
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                users = manager.select_users()
+                if users:
+                    text = """
+╔═════════════════╗
+║           ⭐ <strong>ПОЛЬЗОВАТЕЛИ</strong> ⭐            
+╠═════════════════╣
+║<strong>🆔</strong>│<code>🪪 User ID</code> │ 👤 Username 
+╠═════════════════╣
+"""
+        
+                    for row in users:
+                        ID, user_id, username = row
+                        id_col = f"<strong>{ID:>3}</strong> │"
+                        user_col = f"<code>{user_id:>10}</code> │"
+                        name_col = f"{username:<14}"
+                        text += f"║{id_col} {user_col}@{name_col}\n"
+                    text += """╚═════════════════╝"""
+                    bot.edit_message_text(chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text=text, parse_mode='HTML', reply_markup=del_button())
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
+                
+        elif call.data == 'pk1':
+            #Для ПК
             user_id = call.from_user.id
             if manager.select_id(user_id):
                 users = manager.select_users()
                 if users:
                     text = """
 ╔══════════════════════════════════════╗
-║                               ⭐ *ПОЛЬЗОВАТЕЛИ* ⭐            
+║                               ⭐ <strong>ПОЛЬЗОВАТЕЛИ</strong> ⭐            
 ╠══════════════════════════════════════╣
-║ *🆔 ID* │`🪪 User ID` │ 👤 Username 
+║ <strong>🆔 ID</strong> │<code>🪪 User ID</code> │ <strong>👤 Username</strong>
 ╠══════════════════════════════════════╣
 """
         
                     for row in users:
                         ID, user_id, username = row
-                        id_col = f"{ID:>11} │"
-                        user_col = f"{user_id:>10} │"
+                        id_col = f"<strong>{ID:>11}</strong> │"
+                        user_col = f"<code>{user_id:>10}</code> │"
                         name_col = f"{username[:14]:<14}"
                     
-                        text += f"║*{id_col}*`{user_col}`@{name_col}\n"
+                        text += f"║{id_col}{user_col}@{name_col}\n"
                     text += """
 ╚══════════════════════════════════════╝"""
-                    bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                    bot.edit_message_text(chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text=text, parse_mode='HTML', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+
         elif call.data == 'bt101':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -864,7 +912,8 @@ def callback_inline_message(call):
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
 
-        elif call.data == 'bt102':
+        elif call.data == 'pk2':
+            #Для ПК
             user_id = call.from_user.id
             if manager.select_id(user_id):
                 admins = manager.select_admins()
@@ -876,12 +925,38 @@ def callback_inline_message(call):
 
                 for i, admin in enumerate(admins, 1):
                     user_id = str(admin[1] if len(admin) > 1 else admin[0])
-                    num_col = f"{i:>2}    │"  
-                    text += f"║*{num_col}* `{user_id:<15}`\n"
+                    num_col = f"*{i:>2}*    │"  
+                    text += f"║{num_col} `{user_id:<15}`\n"
 
                 text += "╚══════════════════════╝"
 
-                bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
+                bot.edit_message_text(chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text=text, parse_mode='Markdown', reply_markup=del_button())
+            else:
+                bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
+        
+        elif call.data == 'tel2':
+            #Для Телефона
+            user_id = call.from_user.id
+            if manager.select_id(user_id):
+                admins = manager.select_admins()
+                text =  "╔═════════════════╗\n"
+                text += "║                  *👑 АДМИНЫ*\n"
+                text += "╠═════════════════╣\n"
+                text += "║*№* │ `🪪 User ID`\n" 
+                text += "╠═════════════════╣\n"
+
+                for i, admin in enumerate(admins, 1):
+                    user_id = str(admin[1] if len(admin) > 1 else admin[0])
+                    num_col = f"*{i:>2}*   │"  
+                    text += f"║{num_col} `{user_id:<15}`\n"
+
+                text += "╚═════════════════╝"
+
+                bot.edit_message_text(chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text=text, parse_mode='Markdown', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
 
@@ -900,8 +975,15 @@ def callback_inline_message(call):
             user_id = call.from_user.id
             if manager.select_id(user_id):
                 bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-                bot.send_message(call.message.chat.id, "*🎮 Админский джойстик активирован!*", reply_markup=admin_keyboard(), parse_mode='Markdown')
+                bot.send_message(call.message.chat.id, '''<strong>🎮 Админский джойстик АКТИВИРОВАН!</strong>\n
+<blockquote><strong>⚠️ Смотри не натвори ничего! 😈</strong></blockquote>''', reply_markup=admin_keyboard(), parse_mode='HTML')
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
+
+        elif call.data == 'bt100':
+            bot.send_message(call.message.chat.id, '*Выберите формат отображения таблицы:*', parse_mode='Markdown', reply_markup=choose_bd())
+
+        elif call.data == 'bt102':
+            bot.send_message(call.message.chat.id, '*Выберите формат отображения таблицы:*', parse_mode='Markdown', reply_markup=choose_bd2())
 
 bot.infinity_polling()

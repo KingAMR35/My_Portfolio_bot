@@ -2,13 +2,14 @@ import telebot
 import os
 import base64
 import tempfile
-import cv2
+import io
 import wikipedia
 import randfacts
 import validators
 import pyqrcode
 import random
 import time
+from PIL import Image, ImageFilter
 from gtts import gTTS
 from dotenv import load_dotenv
 from AI_service import generate_leonardo_image
@@ -607,35 +608,31 @@ def text_handler(message):
         return
         
 @bot.message_handler(content_types=['photo'])
-def photo_handler(message):
+def handle_photo(message):
     user_id = message.from_user.id
     
     if user_sessions.get(user_id) == "blur":
-        file_id = message.photo[-1].file_id
-        file_info = bot.get_file(file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
+        try:
+            file_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
 
-        temp_file = TEMP_FOLDER / f"{file_id}.jpg"
-        with open(temp_file, 'wb') as f:
-            f.write(downloaded_file)
+            img = Image.open(io.BytesIO(downloaded_file)).convert('RGB')
 
-        image = cv2.imread(str(temp_file))
+            blurred = img.filter(ImageFilter.GaussianBlur(radius=8))
 
-        if image is None:
-            bot.reply_to(message, "Не удалось распознать изображение.")
-            return
+            small = blurred.resize((20, 20), Image.Resampling.LANCZOS)
+            pixelated = small.resize(img.size, Image.Resampling.NEAREST)
+            result = Image.blend(blurred, pixelated, 0.7)
 
-        blurred_image = cv2.GaussianBlur(image, (15, 15), 0)
-        pixelated_image = cv2.resize(blurred_image, (30, 30), interpolation=cv2.INTER_NEAREST)
-        pixelated_image = cv2.resize(pixelated_image, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
-        processed_temp_file = TEMP_FOLDER / f"{file_id}_processed.jpg"
-        cv2.imwrite(str(processed_temp_file), pixelated_image)
+            bio = io.BytesIO()
+            result.save(bio, format='PNG', quality=95)
+            bio.seek(0)
 
-        with open(processed_temp_file, 'rb') as pf:
-            bot.send_photo(message.chat.id, pf, caption='Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨', reply_markup=AI_keyboard())
+            bot.send_photo(message.chat.id, bio, caption="Ну а вот твоя картинка, окутанная лёгкой дымкой и загадочностью! 🖼️✨!")
 
-        temp_file.unlink(missing_ok=True)
-        processed_temp_file.unlink(missing_ok=True)    
+        except Exception as e:
+            bot.send_message(message.chat.id, f"❌ Ошибка: {str(e)}")
+
         return
                
 @bot.callback_query_handler(func=lambda call: True)

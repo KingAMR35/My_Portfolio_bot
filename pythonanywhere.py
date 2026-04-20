@@ -549,18 +549,14 @@ def handle_photo(message):
             file_info = bot.get_file(message.photo[-1].file_id)
             downloaded_file = bot.download_file(file_info.file_path)
 
-            # PIL вместо OpenCV
             img = Image.open(io.BytesIO(downloaded_file)).convert('RGB')
 
-            # Gaussian Blur
             blurred = img.filter(ImageFilter.GaussianBlur(radius=8))
 
-            # Дополнительно: Pixelation эффект
             small = blurred.resize((20, 20), Image.Resampling.LANCZOS)
             pixelated = small.resize(img.size, Image.Resampling.NEAREST)
             result = Image.blend(blurred, pixelated, 0.7)
 
-            # Отправка
             bio = io.BytesIO()
             result.save(bio, format='PNG', quality=95)
             bio.seek(0)

@@ -375,9 +375,11 @@ def bt_4(call):
     user_sessions[call.from_user.id] = "Image_Generator"
     bot.edit_message_text(chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
-                text='''<strong>Привет👋!</strong>\n
-<blockquote>✨ Добро пожаловать в мир <strong>ИИ-генерации!</strong></blockquote>\n
-Напиши мне какую-нибудь фразу и я сгенерирую её!🎨''', parse_mode='Markdown', reply_markup=cm_back())
+                text='''<strong>Привет👋!</strong>
+
+<blockquote>✨ Добро пожаловать в мир <strong>ИИ-генерации</strong> — здесь любая фраза может превратиться в изображение! 🎨</blockquote>
+
+Напиши мне любую фразу, и я сгенерирую её для тебя 💫''', parse_mode='HTML', reply_markup=cm_back())
 
 #Text_To_Voice_bot
 @bot.callback_query_handler(func=lambda call: call.data == 'bt5')
@@ -535,6 +537,9 @@ def guess(message):
         bot.send_message(chat_id, f'<b>🎉 Поздравляем!</b>\nУгадали за <code>{attempts}</code> попыток!', 
                         parse_mode='HTML', reply_markup=again_keyboard())
 
+def build_prompt(user_prompt):
+    return f"{user_prompt}, high quality, detailed, realistic"
+
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
     chat_id = message.chat.id
@@ -574,27 +579,30 @@ def text_handler(message):
         return
     
     elif user_sessions.get(user_id) == 'Image_Generator':
-        prompt = message.text
+        raw_prompt = message.text.strip()
+        prompt = build_prompt(raw_prompt)
         chat_id = message.chat.id
         username = message.from_user.username
+
         bot.send_chat_action(chat_id, 'typing')
-        bot.send_message(message.chat.id, "Подождите, идёт отправка фото🔄")
+        bot.send_message(message.chat.id, "Подождите, идёт генерация изображения🔄")
         bot.send_chat_action(chat_id, 'upload_photo')
-        
+
         image_buffer, status = generate_leonardo_image(prompt)
-        
-        manager.leonardo_AI(user_id, prompt, username)
-        
+
+        manager.leonardo_AI(user_id, raw_prompt, username)
+
         if image_buffer:
             bot.send_photo(
                 chat_id=chat_id,
                 photo=image_buffer,
-                caption=f"✨ *{prompt}*\n\n{status}",
+                caption=f"✨ *{raw_prompt}*\n\n{status}",
                 parse_mode='Markdown'
             )
         else:
             bot.send_message(chat_id, f"❌ Ошибка: {status}")
         return
+        
     
     elif user_sessions.get(user_id) == 'QR':
         if is_link(message.text):
@@ -798,7 +806,9 @@ def callback_inline_message(call):
             
         elif call.data == 'cm_back':
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            bot.send_message(call.message.chat.id, '<strong>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</strong>', reply_markup=menu(), parse_mode='HTML')
+            bot.send_message(call.message.chat.id, '''🎯 Представляю вашему вниманию уникальный каталог моих Telegram-ботов! ✨
+
+<blockquote>Выберите интересующего вас бота и отправляйтесь в захватывающее путешествие по функциональным возможностям моих разработок! 🚀</blockquote>''', reply_markup=menu(), parse_mode='HTML')
 
         elif call.data == 'bt6':
             bot.edit_message_text(chat_id=call.message.chat.id,

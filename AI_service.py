@@ -23,7 +23,6 @@ def generate_leonardo_image(prompt):
         "modelId": "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", 
         "prompt": prompt
     }
-    
     response = requests.post(url, json=payload, headers=headers)
     
     if response.status_code != 200:

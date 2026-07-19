@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div class="box">
+        <h3>MurArt_Samara_bot</h3>
+    </div>
+
+    <div class="menu-list">
+        <div class="text-card">
+            <p class="MurArt-text line-1">🎨 Добро пожаловать в уличную галерею Самары! 🌆</p>
+            <p class="MurArt-text line-2">Здесь муралы оживают на стенах, рассказывая истории города и наполняя его яркими красками.</p>
+        </div>
+    </div>
+
+    <div class="pustota"></div>
+    <div class="anim1">
+        <p class="MurArt-text line-3">❓ Что такое муралы ❓</p>
+        <p class="MurArt-text line-4">✨ Мурал – это термин, происходящий от испанского слова «mural», которое в переводе означает «настенный».
+            🎨 В современном искусстве муралом называют крупномасштабную живопись или художественное изображение, созданное на стенах зданий или других вертикальных поверхностях.
+            🏙️ Муниципальные, культурные и социальные контексты, в которых создаются муралы, делают их значимой частью городского пространства и культурной жизни. 🌍</p>
+    </div>
+
+    <div class="pustota"></div>
+
+    <p class="MurArt-text line-5">✨ Роль муралов в Самаре ✨</p>
+    <p class="MurArt-text line-6">✏️ Муралы в Самаре часто отражают местную культуру и исторические события. Например, в некоторых работах можно увидеть аллюзии на самарские традиции, памятные места и известных личностей. 
+        🏞️ Это помогает не только украсить город, но и напоминает его жителям о культурном наследии. 
+        💬📚 Муралы становятся своеобразными «визитными карточками» районов, формируя их уникальный облик и создавая идентичность. 🔥</p>
+
+    <div class="pustota"></div>
+
+    <div class="menu-list">
+        <a class="text-mur-button" href="{{ url_for('MurArt_Samara_bot_2') }}">
+            <p class="mur-button-text">Посмотреть местоположение муралов в Самаре</p>
+            <div class="mur-button-arrow">›</div>
+        </a>
+    </div>
+    
+    <div class="pustota"></div>
+</body>
+</html>

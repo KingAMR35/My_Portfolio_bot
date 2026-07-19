@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div class="box">
+        <h3>Главное меню</h3>
+    </div>
+
+    <div class="menu-list">
+        <a class="bot-card" href="{{ url_for('MurArt_Samara_bot_1') }}">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot1.png') }}" alt="MurArt_Samara_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🎨 MurArt_Samara_bot</h3>
+                <p class="bot-description">Показывает муралы Самары с адресами и фото</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot2.png') }}" alt="AI_assistant_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🤖 AI_assistant_bot</h3>
+                <p class="bot-description">Отвечает на любые вопросы и даёт советы</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot3.png') }}" alt="Blur_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🖼️ Blur_bot</h3>
+                <p class="bot-description">Размывает фотографии с эффектом арта</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot4.png') }}" alt="Number_Guess_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🎮 Number_Guess_bot</h3>
+                <p class="bot-description">Захватывающая игра "угадай число" с лидербордом</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot5.png') }}" alt="Text_To_Voice_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🎤 Text_To_Voice_bot</h3>
+                <p class="bot-description">Превращает текст в голосовые сообщения</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot6.png') }}" alt="Wikipedia_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">📚 Wikipedia_bot</h3>
+                <p class="bot-description">Ищет информацию в русской Википедии</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot7.png') }}" alt="Rand_fact_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🔬 Rand_fact_bot</h3>
+                <p class="bot-description">Делится случайными научными фактами</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot8.png') }}" alt="Jokes_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">📢 Jokes_bot</h3>
+                <p class="bot-description">Рассказывает смешные анекдоты и шутки</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot9.png') }}" alt="QR_Creator_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">📱 QR_Creator_bot</h3>
+                <p class="bot-description">Создаст QR-коды для всех видов ссылок</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+
+        <a class="bot-card" href="#">
+            <img class="bot-icon" src="{{ url_for('static', filename='images/bot10.png') }}" alt="Image_Generator_bot">
+            <div class="bot-content">
+                <h3 class="bot-title">🖌️ Image_Generator_bot</h3>
+                <p class="bot-description">Генерирует картинки по вашему описанию</p>
+            </div>
+            <div class="bot-arrow">›</div>
+        </a>
+    </div>
+</body>
+</html>

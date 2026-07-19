@@ -18,6 +18,8 @@ from pathlib import Path
 from gigachat import GigaChat
 from telebot import types
 from translate import Translator
+from threading import Thread
+from miniapp import app
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv('TOKEN'))
@@ -38,6 +40,17 @@ bot.set_my_commands(
         telebot.types.BotCommand("admin", "🔧 Админ-панель ")
     ]
 )
+
+def run_miniapp(): #! ДЛЯ ЛОКАЛЬНОГО ЗАПУСКА
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    
+# def run_miniapp(): #!ДЛЯ ХОСТА
+#     app.run(
+#         host="0.0.0.0",
+#         port=int(os.getenv("PORT", "5000")),
+#         debug=False,
+#         use_reloader=False
+#     )
 
 def menu():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -768,7 +781,7 @@ def handle_photo(message):
             bot.send_message(message.chat.id, f"❌ Ошибка: {str(e)}")
 
         return
-               
+    
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline_message(call):
     if call.message:
@@ -826,14 +839,14 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button5':
-            with open('images\\1.png', 'rb') as f:  
+            with open('static/images/1.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Будущее»*\n
 С этим муралом художник Дмитрий Горшков стал финалистом фестиваля стрит-арта Приволжского федерального округа «ФормАт». 
 По словам автора, Венера на картине символизирует жизненный опыт, а дирижабль — движение вперёд. 
 Эта работа вдохновляет задуматься о том, что ждут в будущем школьники и какие цели ставят перед собой. 🌟""", parse_mode='Markdown', reply_markup=del_button())
 
         elif call.data == 'button6':
-            with open('images\\2.png', 'rb') as f:  
+            with open('static/images/2.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🚀 Мурал в честь Юрия Гагарина*\n
 Этот потрясающий мурал посвящен первому космонавту Юрию Алексеевичу Гагарину. 
 Яркое произведение служит не только почтением выдающемуся человеку, но и символом космической гордости России, поскольку именно Самара заслуженно носит звание Космической столицы. 
@@ -841,7 +854,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button7':
-            with open('images\\3.png', 'rb') as f:  
+            with open('static/images/3.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*👾 Лев Яшин*\n 
 Этот мурал увековечил легендарного советского футболиста Льва Яшина, знаменитого своими невероятными вратарскими талантами и признанного одним из лучших голкиперов мира. 
 Произведение подчеркивает значимость Яшина как спортивного кумира и выражает уважение к его огромному вкладу в российскую футбольную культуру. 
@@ -850,7 +863,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button8':
-            with open('images\\4.png', 'rb') as f:  
+            with open('static/images/4.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🌿 «Чистый воздух»*\n
 Этот мурал не только придает городу красоту, но и несет глубокое символическое послание. 
 Появившись в эпоху пандемии COVID-19, он становится важным напоминанием о ценности здоровья и охраны природы. 
@@ -859,7 +872,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button008':
-            with open('images\\5.png', 'rb') as f:  
+            with open('static/images/5.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🩺 «Благодарность врачам»*\n
 Этот мурал демонстрирует искреннее уважение к медикам, проявившим героизм и самоотверженность в борьбе с пандемией COVID-19. 
 Детям можно рассказать о важности профессии врача и огромной роли медиков в нашем обществе, подчёркивая, насколько они важны для защиты здоровья населения. 
@@ -869,7 +882,7 @@ def callback_inline_message(call):
             )
         
         elif call.data == 'button08':
-            with open('images\\6.png', 'rb') as f:  
+            with open('static/images/6.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🌥️ «Девушка, сидящая на облаках»*\n
 Приближаясь к этому муралу, начните разговор о его смысле и эмоциях, которые он вызывает. 
 Задайте детям вопросы о том, что они видят на картинке: кто эта девушка, почему она расположилась на облаках и какое настроение, по их мнению, это передает? 
@@ -879,7 +892,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button10':
-            with open('images\\7.png', 'rb') as f:  
+            with open('static/images/7.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*✈️ Александр Петрович Мамкин*\n
 Мурал посвящён подвигу лётчика А.П. Мамкина, который в Великую Отечественную войну эвакуировал 90 детей с оккупированных территорий. 
 Несмотря на жестокие испытания, он сумел посадить поврежденный самолёт и спасти малышей. 
@@ -889,7 +902,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button11':
-            with open('images\\8.png', 'rb') as f:  
+            with open('static/images/8.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🌍 Герои народного ополчения*\n
 Мурал прославляет героев народного ополчения, служа украшением города и одновременно напоминанием о важном историческом событии, когда народ объединился для защиты Отечества. 
 Обращаясь к детям рядом с этим муралом, предложите обсудить День народного единства: что он значит, какие события произошли тогда в истории России. 
@@ -898,7 +911,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button12':
-            with open('images\\9.png', 'rb') as f:  
+            with open('static/images/9.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🎨 «Воспоминание»*\n
 Яркий и эмоциональный мурал приглашает зрителей погрузиться в размышления о человеческой памяти. 
 Девушка на картине воплощает воспоминания разных моментов жизни, создающих мозаику характера и мировоззрения. 
@@ -908,7 +921,7 @@ def callback_inline_message(call):
             )
 
         elif call.data == 'button13':
-            with open('images\\11.png', 'rb') as f:  
+            with open('static/images/11.png', 'rb') as f:  
                 bot.send_photo(call.message.chat.id, f, caption="""*🌳 «Древо жизни»*\n
 Этот оригинальный мурал напоминает знаменитую сказку «Алиса в Стране чудес»: яркое дерево и кошки с человечьими лицами создают необычную картину среди привычной серости самарского пейзажа. 
 Обсудите с детьми, что значит для них понятие «Древо жизни». 
@@ -1120,7 +1133,7 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(msg, process_user_id_send)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'users_pk':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1146,7 +1159,7 @@ def callback_inline_message(call):
                     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-            
+        
         elif call.data == 'users_tl':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1170,7 +1183,7 @@ def callback_inline_message(call):
                     bot.send_message(call.message.chat.id, text, parse_mode='HTML', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-               
+
         elif call.data == 'bt101_tl':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1181,7 +1194,7 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(call.message, add_new_admin)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'bt101_pk':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1192,7 +1205,7 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(call.message, add_new_admin)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'admin_pk':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1213,7 +1226,7 @@ def callback_inline_message(call):
                 bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'admin_tl':
             #Для Телефона
             user_id = call.from_user.id
@@ -1235,7 +1248,7 @@ def callback_inline_message(call):
                 bot.send_message(call.message.chat.id, text, parse_mode='Markdown', reply_markup=del_button())
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'bt103_tl':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1246,7 +1259,7 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(call.message, delete_admin)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'bt103_pk':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1257,7 +1270,7 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(call.message, delete_admin)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'bt105':
             user_id = call.from_user.id
             if manager.select_id(user_id):
@@ -1265,16 +1278,19 @@ def callback_inline_message(call):
                 bot.register_next_step_handler(msg, process_broadcast_message)
             else:
                 bot.send_message(call.message.chat.id, "❌ Данная функция доступна только для админов")
-                
+        
         elif call.data == 'mbt1':
             bot.edit_message_text(chat_id=call.message.chat.id,
                         message_id=call.message.message_id, text='''<strong>🎮 Админский джойстик АКТИВИРОВАН!</strong>\n
         <blockquote><strong>⚠️ Смотри не натвори ничего! 😈</strong></blockquote>''', reply_markup=admin_keyboard_tl(), parse_mode='HTML')
-                
+        
         elif call.data == 'mbt2':
             bot.edit_message_text(chat_id=call.message.chat.id,
                         message_id=call.message.message_id, text='''<strong>🎮 Админский джойстик АКТИВИРОВАН!</strong>\n
         <blockquote><strong>⚠️ Смотри не натвори ничего! 😈</strong></blockquote>''', reply_markup=admin_keyboard_pk(), parse_mode='HTML')
         
-print('Бот запущен😎')
-bot.infinity_polling()
+print('Бот запущен 😎')
+if __name__ == "__main__":
+    Thread(target=run_miniapp, daemon=True).start()
+    print("MiniApp запущен 😎")
+    bot.infinity_polling()

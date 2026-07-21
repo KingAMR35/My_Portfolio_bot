@@ -233,7 +233,7 @@ html.dark-mode .text-card {
 }
 
 .pustota{
-    margin-top: 15%;
+    height: 100px;
 }
 
 .line-1 {
@@ -368,6 +368,7 @@ html.dark-mode .text-mur-button {
     line-height: 1;
 }
 
+
 .MurArt-figure {
     margin: 20px 16px;
     max-width: 100%;
@@ -384,13 +385,19 @@ html.dark-mode .MurArt-caption {
     display: block;
     border-radius: 18px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+    cursor: zoom-in;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.MurArt-img:hover {
+    transform: scale(1.02);
+    opacity: 0.96;
 }
 
 .MurArt-caption {
-    font-family: IBM Plex Sans;
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 18px;
     text-align: center;
-    justify-content: center;
     margin-top: 10px;
     background: rgba(220, 152, 27, 0.307);
     border-radius: 8px;
@@ -398,6 +405,7 @@ html.dark-mode .MurArt-caption {
     line-height: 1.45;
     color: var(--text-light);
 }
+
 #i1 {
     animation: MurArt_text_i10 2s ease both;
 }
@@ -448,17 +456,15 @@ html.dark-mode .MurArt-caption {
 }
 
 #i9 {
-    background: rgba(16, 61, 138, 0.307);
+    background: rgba(24, 140, 212, 0.361);
     animation: MurArt_text_i9 2s ease both;
     animation-timeline: view();
     animation-range: entry 0% cover 30%;
 }
 
 #i10 {
-    background: rgba(155, 8, 158, 0.307);
+    background: rgba(105, 255, 91, 0.307);
     animation: MurArt_text_i10 2s ease both;
-    animation-timeline: view();
-    animation-range: entry 0% cover 30%;
 }
 
 @keyframes MurArt_text_i2 {
@@ -504,4 +510,51 @@ html.dark-mode .MurArt-caption {
 @keyframes MurArt_text_i10 {
     from { opacity: 0; transform: translateY(50px) scale(1.08); filter: saturate(0.3); }
     to   { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
+}
+
+.image-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.image-modal.show {
+    display: flex;
+}
+
+.image-modal-content {
+    max-width: 96vw;
+    max-height: 82vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    object-fit: contain;
+}
+
+.image-modal-caption {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+    margin: 0;
+    max-width: 90vw;
+}
+
+.image-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 44px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10000;
 }

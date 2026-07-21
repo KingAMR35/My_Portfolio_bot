@@ -41,16 +41,16 @@ bot.set_my_commands(
     ]
 )
 
-def run_miniapp(): #! ДЛЯ ЛОКАЛЬНОГО ЗАПУСКА
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+# def run_miniapp(): #! ДЛЯ ЛОКАЛЬНОГО ЗАПУСКА
+#     app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     
-# def run_miniapp(): #!ДЛЯ ХОСТА
-#     app.run(
-#         host="0.0.0.0",
-#         port=int(os.getenv("PORT", "5000")),
-#         debug=False,
-#         use_reloader=False
-#     )
+def run_miniapp(): #!ДЛЯ ХОСТА
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
+        debug=False,
+        use_reloader=False
+    )
 
 def menu():
     keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -1293,4 +1293,5 @@ print('Бот запущен 😎')
 if __name__ == "__main__":
     Thread(target=run_miniapp, daemon=True).start()
     print("MiniApp запущен 😎")
+    bot.delete_webhook()
     bot.infinity_polling()

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI_assistant_bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div class="box">
+        <h3>🤖 AI_assistant_bot</h3>
+    </div>
+
+    <div class="chat-clear-wrap">
+        <form method="POST" action="{{ url_for('reset_ai_history') }}" class="chat-clear-form">
+            <button type="submit" class="chat-clear-button">Очистить историю</button>
+        </form>
+    </div>
+
+    <div class="chat-wrap">
+        <div class="chat-history" id="chat-history">
+            <div id="chat-messages">
+                {% for msg in messages %}
+                    <div class="chat-row {{ msg.role }}">
+                        <div class="chat-bubble">{{ msg.text }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <form class="chat-form" id="chat-form" autocomplete="off">
+            <input
+                class="chat-input"
+                type="text"
+                name="message"
+                id="message-input"
+                placeholder="Напишите сообщение..."
+                required
+            >
+            <button class="chat-send" type="submit" id="send-btn">➤</button>
+        </form>
+    </div>
+</body>
+</html>

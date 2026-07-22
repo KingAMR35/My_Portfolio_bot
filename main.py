@@ -48,7 +48,7 @@ def run_miniapp(): #!ДЛЯ ХОСТА
     app.run(
         host="0.0.0.0",
         port=int(os.getenv("PORT", "5000")),
-        debug=False,
+        debug=True,
         use_reloader=False
     )
 

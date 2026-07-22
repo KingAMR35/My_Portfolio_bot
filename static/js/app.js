@@ -1,9 +1,19 @@
 (function () {
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    let backHandler = null;
+
+    function currentPath() {
+        return window.location.pathname.replace(/\/+$/, "") || "/";
+    }
+
+    function isHomePage() {
+        const path = currentPath();
+        return path === "/" || path.endsWith("/index.html");
+    }
+
     function applySavedTheme() {
         const savedTheme = localStorage.getItem("theme");
-        if (savedTheme === "dark") {
-            document.documentElement.classList.add("dark-mode");
-        }
+        document.documentElement.classList.toggle("dark-mode", savedTheme === "dark");
     }
 
     function initThemeToggle() {
@@ -16,29 +26,55 @@
         });
     }
 
-    function initTelegramHeaderButton() {
-        if (!window.Telegram || !window.Telegram.WebApp) return;
+    function removeBackHandler() {
+        if (!tg || !backHandler) return;
+        try {
+            tg.BackButton.offClick(backHandler);
+        } catch (e) {}
+        backHandler = null;
+    }
 
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+    function hideBack() {
+        if (!tg) return;
+        removeBackHandler();
+        try {
+            tg.BackButton.hide();
+        } catch (e) {}
+    }
 
-        const isHomePage =
-            window.location.pathname === "/" ||
-            window.location.pathname.endsWith("index.html");
+    function showBack() {
+        if (!tg) return;
+        removeBackHandler();
 
-        tg.BackButton.offClick();
-        tg.BackButton.hide();
+        backHandler = () => {
+            window.history.back();
+        };
 
-        if (!isHomePage) {
+        try {
+            tg.BackButton.onClick(backHandler);
+        } catch (e) {}
+
+        try {
             tg.BackButton.show();
-            tg.BackButton.onClick(() => {
-                if (window.history.length > 1) {
-                    window.history.back();
-                } else {
-                    tg.close();
-                }
-            });
+        } catch (e) {}
+    }
+
+    function syncTelegramButtons() {
+        if (!tg) return;
+
+        try {
+            tg.ready();
+        } catch (e) {}
+
+        if (isHomePage()) {
+            hideBack();
+        } else {
+            showBack();
         }
+
+        try {
+            tg.MainButton && tg.MainButton.hide();
+        } catch (e) {}
     }
 
     function initImageModal() {
@@ -84,11 +120,101 @@
         });
     }
 
-    applySavedTheme();
+    function initChatAjax() {
+        const form = document.getElementById("chat-form");
+        const input = document.getElementById("message-input");
+        const history = document.getElementById("chat-messages");
+        const sendBtn = document.getElementById("send-btn");
+        const resetForm = document.querySelector(".chat-clear-form");
 
-    document.addEventListener("DOMContentLoaded", () => {
+        if (!form || !input || !history || !sendBtn) return;
+
+        function scrollBottom() {
+            const container = document.getElementById("chat-history");
+            if (container) container.scrollTop = container.scrollHeight;
+        }
+
+        function addBubble(role, text) {
+            const row = document.createElement("div");
+            row.className = "chat-row " + role;
+
+            const bubble = document.createElement("div");
+            bubble.className = "chat-bubble";
+            bubble.textContent = text;
+
+            row.appendChild(bubble);
+            history.appendChild(row);
+            scrollBottom();
+            return bubble;
+        }
+
+        scrollBottom();
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = "";
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            addBubble("user", text);
+            const typingBubble = addBubble("bot", "Печатает...");
+
+            try {
+                const fd = new FormData();
+                fd.append("message", text);
+
+                const resp = await fetch("/AI_assistant_bot/send", {
+                    method: "POST",
+                    body: fd
+                });
+
+                const data = await resp.json();
+
+                if (!data.ok) {
+                    typingBubble.textContent = "Ошибка отправки";
+                } else {
+                    typingBubble.textContent = data.bot;
+                }
+            } catch (err) {
+                typingBubble.textContent = "Ошибка сети";
+            } finally {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+                scrollBottom();
+            }
+        });
+
+        if (resetForm) {
+            resetForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                try {
+                    await fetch("/AI_assistant_bot/reset", { method: "POST" });
+                    history.replaceChildren();
+                    scrollBottom();
+                } catch (err) {}
+            });
+        }
+    }
+
+    function initAll() {
+        applySavedTheme();
         initThemeToggle();
-        initTelegramHeaderButton();
         initImageModal();
+        initChatAjax();
+        syncTelegramButtons();
+    }
+
+    document.addEventListener("DOMContentLoaded", initAll);
+    window.addEventListener("pageshow", syncTelegramButtons);
+    window.addEventListener("popstate", syncTelegramButtons);
+    window.addEventListener("focus", syncTelegramButtons);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) syncTelegramButtons();
     });
 })();

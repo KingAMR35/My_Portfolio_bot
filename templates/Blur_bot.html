@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blur_bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    <style>
+        .msg.error { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: 600; margin-top: 10px; cursor: pointer; width: 100%; max-width: 300px; }
+        .btn:active { background-color: #0056b3; }
+        .hint { font-size: 13px; color: #666; margin-top: 12px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>Blur_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div id="flash-messages"></div>
+
+    <div class="upload-box" id="drop-zone">
+        <p>Нажмите для выбора фото</p>
+        <input type="file" id="file-input" name="file" accept="image/*" hidden>
+    </div>
+
+    <div id="result-area" style="display: none; text-align: center; margin-top: 20px;">
+        <img id="result-image" src="" alt="Processed" style="max-width: 100%; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <br>
+        <button id="download-btn" class="btn" type="button">Сохранить в галерею</button>
+        <p class="hint">💡 Изображение откроется в меню "Поделиться", где можно сохранить его в галерею</p>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const resultArea = document.getElementById('result-area');
+        const resultImage = document.getElementById('result-image');
+        const downloadBtn = document.getElementById('download-btn');
+        const flashMessages = document.getElementById('flash-messages');
+
+        let currentBase64 = '';
+        let currentFilename = '';
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            dropZone.querySelector('p').textContent = 'Обработка...';
+            flashMessages.innerHTML = '';
+            resultArea.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.ok) {
+                    currentBase64 = data.image;
+                    currentFilename = data.filename;
+                    resultImage.src = data.image;
+                    resultArea.style.display = 'block';
+                    dropZone.querySelector('p').textContent = 'Выбрать другое фото';
+                } else {
+                    flashMessages.innerHTML = `<div class="msg error">${data.error}</div>`;
+                    dropZone.querySelector('p').textContent = 'Нажмите для выбора фото';
+                }
+            } catch (err) {
+                flashMessages.innerHTML = `<div class="msg error">Ошибка сети</div>`;
+                dropZone.querySelector('p').textContent = 'Нажмите для выбора фото';
+            }
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!currentBase64) return;
+
+            try {
+                const byteString = atob(currentBase64.split(',')[1]);
+                const mimeString = currentBase64.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const blob = new Blob([ab], { type: mimeString });
+                const file = new File([blob], currentFilename, { type: mimeString });
+
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                    });
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = currentFilename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    flashMessages.innerHTML = `<div class="msg error">Не удалось сохранить файл</div>`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

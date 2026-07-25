@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <div class="box">
+        <h3>Number_Guess_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+    <div class="stats-container">
+        <div class="stats-header">
+            <h1>🏆 Статистика</h1>
+            <p>Лучшие игроки по количеству попыток</p>
+        </div>
+
+        {% if leaderboard %}
+            <div class="podium">
+                {% if leaderboard|length >= 2 %}
+                <div class="podium-place second">
+                    <div class="medal">🥈</div>
+                    <div class="podium-username">{{ leaderboard[1][0] }}</div>
+                    <div class="podium-score">{{ leaderboard[1][1] }} попыток</div>
+                    <div class="podium-bar">2</div>
+                </div>
+                {% endif %}
+
+                <!-- 1 МЕСТО -->
+                <div class="podium-place first">
+                    <div class="medal">🥇</div>
+                    <div class="podium-username">{{ leaderboard[0][0] }}</div>
+                    <div class="podium-score">{{ leaderboard[0][1] }} попыток</div>
+                    <div class="podium-bar">1</div>
+                </div>
+
+                {% if leaderboard|length >= 3 %}
+                <div class="podium-place third">
+                    <div class="medal">🥉</div>
+                    <div class="podium-username">{{ leaderboard[2][0] }}</div>
+                    <div class="podium-score">{{ leaderboard[2][1] }} попыток</div>
+                    <div class="podium-bar">3</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if leaderboard|length > 3 %}
+            <div class="leaderboard-table">
+                <div class="table-header">
+                    <div>Место</div>
+                    <div>Никнейм</div>
+                    <div>Попытки</div>
+                </div>
+                {% for entry in leaderboard[3:] %}
+                <div class="table-row">
+                    <div class="row-place">{{ loop.index + 3 }}</div>
+                    <div class="row-username">{{ entry[0] }}</div>
+                    <div class="row-score">{{ entry[1] }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <div class="emoji">🎮</div>
+                <h2>Пока нет победителей</h2>
+                <p>Стань первым, кто займет место на подиуме!</p>
+            </div>
+        {% endif %}
+
+        <a href="javascript:void(0)" 
+            class="btn-back-stat" 
+            id="btn-back"
+            onclick="window.goBack && window.goBack(); return false;">
+                ← Назад к игре
+        </a>
+    </div>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+    </script>
+</body>
+</html>

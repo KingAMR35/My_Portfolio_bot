@@ -1,6 +1,8 @@
 import os
 import time
 import psycopg2
+from psycopg2 import pool
+from psycopg2 import OperationalError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,11 +14,38 @@ class DB_service:
         if not self.database_url:
             raise ValueError("DATABASE_URL is not set in .env")
 
+        # Добавляем параметры keepalive, чтобы предотвратить закрытие соединения сервером
+        # Если в URL уже есть параметры, добавляем через &, иначе через ?
+        separator = "&" if "?" in self.database_url else "?"
+        safe_url = f"{self.database_url}{separator}keepalives=1&keepalives_idle=60&keepalives_interval=10&keepalives_count=5"
+
+        # Создаем пул соединений
+        self.connection_pool = pool.ThreadedConnectionPool(
+            minconn=2,
+            maxconn=10,
+            dsn=safe_url
+        )
+
     def get_connection(self):
-        return psycopg2.connect(self.database_url)
+        """Получает соединение из пула и проверяет, что оно живо."""
+        conn = self.connection_pool.getconn()
+        try:
+            # Делаем быстрый ping, чтобы проверить, не закрыл ли сервер соединение
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+            return conn
+        except OperationalError:
+            # Если соединение мертво, принудительно закрываем его и просим пул выдать новое
+            self.connection_pool.putconn(conn, close=True)
+            return self.connection_pool.getconn()
+
+    def release_connection(self, conn):
+        """Возвращает соединение обратно в пул."""
+        self.connection_pool.putconn(conn)
 
     def create_tables(self):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS users (
@@ -26,7 +55,6 @@ class DB_service:
                         username TEXT NOT NULL
                     )
                 """)
-
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS prompts (
                         user_id BIGINT,
@@ -34,7 +62,6 @@ class DB_service:
                         AI_answer TEXT NOT NULL
                     )
                 """)
-
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS leonardo_prompts (
                         user_id BIGINT,
@@ -42,7 +69,6 @@ class DB_service:
                         username TEXT
                     )
                 """)
-
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS active_games (
                         chat_id BIGINT PRIMARY KEY,
@@ -51,7 +77,6 @@ class DB_service:
                         created_at DOUBLE PRECISION DEFAULT 0
                     )
                 """)
-
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS leaderboard (
                         username TEXT PRIMARY KEY,
@@ -59,17 +84,18 @@ class DB_service:
                         last_play TIMESTAMP DEFAULT NOW()
                     )
                 """)
-
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS ADMINS (
                         user_id BIGINT UNIQUE NOT NULL
                     )
                 """)
-
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def start_game(self, chat_id, bot_choice):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO active_games (chat_id, bot_choice, attempts, created_at)
@@ -81,9 +107,12 @@ class DB_service:
                         created_at = EXCLUDED.created_at
                 """, (chat_id, bot_choice, time.time()))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def get_game(self, chat_id):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT chat_id, bot_choice, attempts, created_at
@@ -97,9 +126,12 @@ class DB_service:
                     conn.commit()
 
                 return row
+        finally:
+            self.release_connection(conn)
 
     def save_attempt(self, chat_id, attempts):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     UPDATE active_games
@@ -107,9 +139,12 @@ class DB_service:
                     WHERE chat_id = %s
                 """, (attempts, time.time(), chat_id))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def end_game(self, chat_id, username, attempts):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM active_games WHERE chat_id = %s", (chat_id,))
 
@@ -125,11 +160,13 @@ class DB_service:
                             best_score = EXCLUDED.best_score,
                             last_play = NOW()
                     """, (username, attempts))
-
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def get_leaderboard(self, limit=5):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT username, best_score
@@ -138,9 +175,12 @@ class DB_service:
                     LIMIT %s
                 """, (limit,))
                 return cur.fetchall()
+        finally:
+            self.release_connection(conn)
 
     def create_user(self, user_id, chat_id, username):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO users (user_id, chat_id, username)
@@ -151,33 +191,45 @@ class DB_service:
                         username = EXCLUDED.username
                 """, (user_id, chat_id, username))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def add_to_prompts(self, user_id, user_prompt, AI_answer):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO prompts (user_id, user_prompt, AI_answer)
                     VALUES (%s, %s, %s)
                 """, (user_id, user_prompt, AI_answer))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def leonardo_AI(self, user_id, prompt, username):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO leonardo_prompts (user_id, prompt, username)
                     VALUES (%s, %s, %s)
                 """, (user_id, prompt, username))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def select_users(self):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("SELECT ID, user_id, username FROM users ORDER BY ID ASC")
                 return cur.fetchall()
+        finally:
+            self.release_connection(conn)
 
     def add_new_admin(self, user_id):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO ADMINS (user_id)
@@ -185,26 +237,37 @@ class DB_service:
                     ON CONFLICT (user_id) DO NOTHING
                 """, (user_id,))
             conn.commit()
+        finally:
+            self.release_connection(conn)
 
     def select_id(self, user_id):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("SELECT EXISTS(SELECT 1 FROM ADMINS WHERE user_id = %s)", (user_id,))
                 return cur.fetchone()[0]
+        finally:
+            self.release_connection(conn)
 
     def select_admins(self):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("SELECT user_id FROM ADMINS")
                 return cur.fetchall()
+        finally:
+            self.release_connection(conn)
 
     def delete_admin(self, user_id):
-        with self.get_connection() as conn:
+        conn = self.get_connection()
+        try:
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM ADMINS WHERE user_id = %s", (user_id,))
                 deleted = cur.rowcount > 0
             conn.commit()
             return deleted
+        finally:
+            self.release_connection(conn)
 
 
 if __name__ == "__main__":

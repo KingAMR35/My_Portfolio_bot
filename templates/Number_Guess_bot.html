@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    
+</head>
+<body>
+    <div class="box">
+        <h3>Number_Guess_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div class="content">
+        <div class="panel">
+            <div class="number" id="target-number">?</div>
+            <div class="hint">Введите число от 1 до 1000</div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span>Попытки</span>
+                    <b id="tries">{{ tries }}</b>
+                </div>
+                <div class="stat">
+                    <span>Статус</span>
+                    <b id="status">{{ status }}</b>
+                </div>
+            </div>
+
+            <form class="guess-form" id="guess-form">
+                <input class="guess-input" type="hidden" name="user_id" id="hidden-user-id" value="{{ session.get('user_id', '') }}">
+                <input class="guess-input" type="hidden" name="username" id="hidden-username" value="{{ session.get('username', '') }}">
+                
+                <input class="guess-input" type="number" name="guess" min="1" max="1000" placeholder="Ваше число" required>
+                <div class="row">
+                    <button class="btn-main" type="submit">Проверить</button>
+                    <button class="btn-reset" id="reset-btn" type="button">Заново</button>
+                </div>
+                <a href="/Number_Guess_statistic" class="btn-stats" id="stats-btn">
+                    🏆 Статистика
+                </a>
+
+            </form>
+
+            <div class="message {{ message_class }}" id="message">{{ message }}</div>
+
+        </div>
+    </div>
+</body>
+</html>

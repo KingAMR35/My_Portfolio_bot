@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='Text_To_Voice_bot.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    
+</head>
+<body>
+    <div class="box">
+        <h3>Text_To_Voice_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <div class="tts-panel">
+            <div class="tts-input-wrap">
+                <textarea 
+                    id="tts-text" 
+                    class="tts-textarea" 
+                    placeholder="Введите текст для озвучки..."
+                    maxlength="1500"
+                    rows="5"></textarea>
+                <div class="char-counter">
+                    <span id="char-count">0</span> / 1500
+                </div>
+            </div>
+
+            <div class="tts-lang-wrap">
+                <label class="tts-label">🌐 Язык для озвучки</label>
+                <div class="lang-grid">
+                    <button type="button" class="lang-btn active" data-lang="ru">🇷🇺 Русский</button>
+                    <button type="button" class="lang-btn" data-lang="en">🇺🇸 Английский</button>
+                    <button type="button" class="lang-btn" data-lang="uk">🇺🇦 Украинский</button>
+                    <button type="button" class="lang-btn" data-lang="de">🇩🇪 Немецкий</button>
+                    <button type="button" class="lang-btn" data-lang="fr">🇫🇷 Французский</button>
+                    <button type="button" class="lang-btn" data-lang="es">🇪🇸 Испанский</button>
+                    <button type="button" class="lang-btn" data-lang="it">🇮🇹 Итальянский</button>
+                    <button type="button" class="lang-btn" data-lang="ja">🇯🇵 Японский</button>
+                    <button type="button" class="lang-btn" data-lang="ko">🇰🇷 Корейский</button>
+                    <button type="button" class="lang-btn" data-lang="zh-CN">🇨🇳 Китайский</button>
+                    <button type="button" class="lang-btn" data-lang="ar">🇸🇦 Арабский</button>
+                    <button type="button" class="lang-btn" data-lang="hi">🇮🇳 Индийский</button>
+                </div>
+            </div>
+
+            <button id="tts-generate" class="btn-generate">
+                <span class="btn-text">🎤 Сгенерировать речь</span>
+                <span class="btn-loader" style="display:none;">⏳ Генерация...</span>
+            </button>
+
+            <div id="tts-result" class="tts-result" style="display:none;">
+                <div class="result-header">
+                    <span class="result-icon">🔊</span>
+                    <span class="result-lang" id="result-lang"></span>
+                </div>
+                <audio id="tts-audio" controls></audio>
+                <div class="result-actions">
+                    <button id="download-btn" class="btn-action" type="button">🔗 Поделиться</button>
+                    <button id="tts-copy" class="btn-action">📋 Копировать текст</button>
+                </div>
+            </div>
+
+            <div id="tts-error" class="tts-error" style="display:none;"></div>
+        </div>
+    </div>
+</body>
+</html>

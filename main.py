@@ -742,13 +742,12 @@ def text_handler(message):
             bot.send_message(chat_id, f"❌ Ошибка: {status}")
         return
         
-    
     elif user_sessions.get(user_id) == 'QR':
         if is_link(message.text):
             text = message.text
             url = pyqrcode.create(text)
-            url.png('voices\QR.png', scale=8) 
-            with open('voices\QR.png', 'rb') as p:
+            url.png('voices/QR.png', scale=8) 
+            with open('voices/QR.png', 'rb') as p:
                 bot.send_photo(message.chat.id, p, reply_markup=AI_keyboard())
         else:
             bot.reply_to(message, "❌ Это не ссылка.", reply_markup=AI_keyboard())

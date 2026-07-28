@@ -1,9 +1,15 @@
 import os
 import uuid
 import io
+import time
 import base64
+import wikipedia
+import wikipedia.exceptions
+import randfacts
+from translate import Translator
+from gtts import gTTS
 from PIL import Image, ImageFilter, ImageOps
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, session, send_file, url_for, flash
 from gigachat import GigaChat
 from random import *
 from werkzeug.utils import secure_filename
@@ -13,6 +19,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+wikipedia.set_user_agent("TG_MiniApp_Bot/1.0 (https://github.com/yourusername)")
+
 
 CREDENTIALS = os.getenv("CREDENTIALS", "")
 encoded_credentials = base64.b64encode(CREDENTIALS.encode()).decode()
@@ -190,7 +199,6 @@ def Number_Guess_bot():
         message_class=message_class
     )
 
-
 @app.route('/guess', methods=['POST'])
 def guess():
     user_id = request.form.get('user_id') or session.get('user_id') or 123456789
@@ -256,7 +264,6 @@ def guess():
             'reveal_number': False
         })
 
-
 @app.route('/reset', methods=['POST'])
 def reset():
     user_id = request.form.get('user_id') or session.get('user_id') or 123456789
@@ -285,6 +292,201 @@ def Number_Guess_statistic():
         'Number_Guess_statistic.html',
         leaderboard=leaderboard
     )
+
+@app.route("/Text_To_Voice_bot")
+def Text_To_Voice_bot():
+    user_id, username = get_user_info()
+    return render_template(
+        'Text_To_Voice_bot.html',
+        user_id=user_id,
+        username=username
+    )
+
+@app.route("/tts/generate", methods=["POST"])
+def tts_generate():
+    try:
+        text = request.form.get("text", "").strip()
+        lang = request.form.get("lang", "ru")
+        
+        if not text:
+            return jsonify({"ok": False, "error": "Введите текст"}), 400
+        
+        if len(text) > 1500:
+            return jsonify({"ok": False, "error": "Текст слишком длинный (макс. 1500 символов)"}), 400
+        
+        allowed_langs = ["ru", "en", "uk", "de", "fr", "es", "it", "ja", "ko", "zh-CN", "ar", "hi", "pt", "tr", "pl"]
+        if lang not in allowed_langs:
+            lang = "ru"
+        
+        os.makedirs('voices', exist_ok=True)
+        
+        audio_file = 'voices/audio.mp3'
+        tts = gTTS(text=text, lang=lang, slow=False)
+        tts.save(audio_file)
+        
+        return jsonify({
+            "ok": True,
+            "audio_url": f"/tts/audio?t={int(time.time())}",
+            "text": text,
+            "lang": lang
+        })
+    
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Ошибка: {str(e)}"}), 500
+
+@app.route("/tts/audio")
+def tts_audio():
+    audio_file = 'voices/audio.mp3'
+    if not os.path.exists(audio_file):
+        return jsonify({"ok": False, "error": "Аудио не найдено"}), 404
+    
+    return send_file(
+        audio_file,
+        mimetype='audio/mpeg',
+        as_attachment=False,
+        download_name='speech.mp3'
+    )
+
+@app.route("/Wikipedia_bot")
+def Wikipedia_bot():
+    return render_template('Wikipedia_bot.html')
+
+@app.route("/wiki/search", methods=["POST"])
+def wiki_search():
+    query = request.form.get("query", "").strip()
+
+    if not query:
+        return jsonify({"ok": False, "error": "Введите запрос"})
+
+    if len(query) > 100:
+        return jsonify({"ok": False, "error": "Запрос слишком длинный"})
+
+    wikipedia.set_lang("ru")
+
+    try:
+        page = wikipedia.page(query, auto_suggest=True)
+
+        image_url = None
+        if page.images:
+            for img in page.images:
+                if any(ext in img.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                    if 'upload.wikimedia.org' in img:
+                        image_url = img
+                        break
+
+        related = []
+        if page.links:
+            related = [link for link in page.links if ' ' not in link][:5]
+
+        summary = wikipedia.summary(query, sentences=3, auto_suggest=True)
+
+        return jsonify({
+            "ok": True,
+            "title": page.title,
+            "summary": summary,
+            "image": image_url,
+            "url": page.url,
+            "related": related
+        })
+
+    except wikipedia.exceptions.DisambiguationError as e:
+        first_option = e.options[0]
+        try:
+            page = wikipedia.page(first_option, auto_suggest=False)
+            image_url = None
+            if page.images:
+                for img in page.images:
+                    if any(ext in img.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                        if 'upload.wikimedia.org' in img:
+                            image_url = img
+                            break
+            
+            summary = wikipedia.summary(first_option, sentences=3, auto_suggest=False)
+            return jsonify({
+                "ok": True,
+                "title": page.title,
+                "summary": summary,
+                "image": image_url,
+                "url": page.url,
+                "related": []
+            })
+        except Exception:
+            return jsonify({"ok": False, "error": "Не удалось уточнить запрос"})
+
+    except wikipedia.exceptions.PageError:
+        return jsonify({"ok": False, "error": "Статья не найдена. Попробуйте другой запрос."})
+
+    except Exception as e:
+        print(f"Ошибка Wikipedia API (search): {e}")
+        return jsonify({"ok": False, "error": "Ошибка при запросе к Wikipedia. Попробуйте переформулировать запрос."})
+
+@app.route("/wiki/random")
+def wiki_random():
+    wikipedia.set_lang("ru")
+
+    try:
+        random_title = wikipedia.random(pages=1)
+        page = wikipedia.page(random_title)
+
+        image_url = None
+        if page.images:
+            for img in page.images:
+                if any(ext in img.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                    if 'upload.wikimedia.org' in img:
+                        image_url = img
+                        break
+
+        related = []
+        if page.links:
+            related = [link for link in page.links if ' ' not in link][:5]
+
+        summary = page.summary
+        if len(summary) > 500:
+            summary = summary[:500] + "..."
+
+        return jsonify({
+            "ok": True,
+            "title": page.title,
+            "summary": summary,
+            "image": image_url,
+            "url": page.url,
+            "related": related
+        })
+
+    except Exception as e:
+        print(f"Ошибка Wikipedia API (random): {e}")
+        return jsonify({"ok": False, "error": "Не удалось загрузить случайную статью. Попробуйте ещё раз."})
+
+
+
+
+@app.route("/Rand_fact_bot")
+def Rand_fact_bot():
+    return render_template('Rand_fact_bot.html')
+
+
+@app.route("/api/random_fact")
+def get_random_fact():
+    try:
+        fact_en = randfacts.get_fact()
+        
+        translator = Translator(to_lang="ru")
+        translation = translator.translate(fact_en)
+        
+        return jsonify({
+            "ok": True,
+            "category": "💡 Факт",
+            "text": translation
+        })
+        
+    except Exception as e:
+        print(f"Ошибка получения факта: {e}")
+        return jsonify({
+            "ok": False, 
+            "error": "Не удалось загрузить факт. Попробуйте ещё раз."
+        })
+
+
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

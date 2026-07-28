@@ -2,7 +2,7 @@ import os
 import time
 import psycopg2
 from psycopg2 import pool
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError, InterfaceError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,34 +14,44 @@ class DB_service:
         if not self.database_url:
             raise ValueError("DATABASE_URL is not set in .env")
 
-        # Добавляем параметры keepalive, чтобы предотвратить закрытие соединения сервером
-        # Если в URL уже есть параметры, добавляем через &, иначе через ?
         separator = "&" if "?" in self.database_url else "?"
-        safe_url = f"{self.database_url}{separator}keepalives=1&keepalives_idle=60&keepalives_interval=10&keepalives_count=5"
+        safe_url = (
+            f"{self.database_url}{separator}"
+            "keepalives=1&keepalives_idle=30&keepalives_interval=10&keepalives_count=3"
+            "&connect_timeout=10&application_name=miniapp"
+        )
 
-        # Создаем пул соединений
         self.connection_pool = pool.ThreadedConnectionPool(
-            minconn=2,
+            minconn=1,
             maxconn=10,
             dsn=safe_url
         )
 
     def get_connection(self):
-        """Получает соединение из пула и проверяет, что оно живо."""
         conn = self.connection_pool.getconn()
         try:
-            # Делаем быстрый ping, чтобы проверить, не закрыл ли сервер соединение
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
             return conn
-        except OperationalError:
-            # Если соединение мертво, принудительно закрываем его и просим пул выдать новое
+        except (OperationalError, InterfaceError):
             self.connection_pool.putconn(conn, close=True)
-            return self.connection_pool.getconn()
+            conn = self.connection_pool.getconn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
+                return conn
+            except (OperationalError, InterfaceError):
+                self.connection_pool.putconn(conn, close=True)
+                raise
 
     def release_connection(self, conn):
-        """Возвращает соединение обратно в пул."""
-        self.connection_pool.putconn(conn)
+        try:
+            self.connection_pool.putconn(conn)
+        except Exception:
+            try:
+                self.connection_pool.putconn(conn, close=True)
+            except Exception:
+                pass
 
     def create_tables(self):
         conn = self.get_connection()

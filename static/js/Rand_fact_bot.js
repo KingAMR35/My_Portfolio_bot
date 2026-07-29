@@ -12,29 +12,36 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadFact() {
         card.classList.remove('fade-in');
         card.classList.add('fade-out');
-        loader.style.display = 'flex';
+        if (loader) loader.style.display = 'flex';
         nextBtn.disabled = true;
 
         try {
             const response = await fetch('/api/random_fact');
+            
+            if (!response.ok) {
+                throw new Error(`Сервер вернул ошибку: ${response.status} ${response.statusText}`);
+            }
+
             const data = await response.json();
 
             if (data.ok) {
                 currentText = data.text;
-
                 setTimeout(() => {
                     textEl.textContent = data.text;
-                    loader.style.display = 'none';
+                    if (loader) loader.style.display = 'none';
                     card.classList.remove('fade-out');
                     card.classList.add('fade-in');
                     nextBtn.disabled = false;
                 }, 300);
             } else {
-                throw new Error(data.error || 'Ошибка');
+                throw new Error(data.error || 'Неизвестная ошибка сервера');
             }
         } catch (err) {
-            loader.style.display = 'none';
-            textEl.textContent = '❌ Ошибка загрузки. Попробуй ещё раз!';
+            console.error("Ошибка загрузки факта:", err);
+            if (loader) loader.style.display = 'none';
+            
+            textEl.textContent = `❌ Ошибка: ${err.message}`;
+            
             card.classList.remove('fade-out');
             card.classList.add('fade-in');
             nextBtn.disabled = false;
@@ -45,9 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     shareBtn.addEventListener('click', async () => {
         if (!currentText) return;
-
-        const shareText = `💡 Интересный факт:\n\n${currentText}`;
-
+        const shareText = `💡 Интересный факт:\n\n${currentText}\n\n@KingAMR_bot`;
         try {
             if (navigator.share) {
                 await navigator.share({ title: 'Интересный факт', text: shareText });

@@ -971,7 +971,7 @@ def callback_inline_message(call):
         text=f'<blockquote>{translation}</blockquote>', reply_markup=dalee(), parse_mode='HTML')
             
         elif call.data == 'joke_start':
-            prompt = 'Привет, расскажи мне анекдот или забавную историю. Используй яркие образы и творческий подход, чтобы вызвать улыбку!'
+            prompt = 'Расскажи мне очень смешной анекдот, чтобы все замеялись. Но ты обязан написать ТОЛЬКО анекдот, без лишних слов'
             with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
                 response = giga.chat(prompt)
                 AI_answer = response.choices[0].message.content.strip()

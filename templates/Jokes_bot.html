@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Случайные факты</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='Jokes_bot.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/telegram-init.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/Jokes_bot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body>
+    <div class="box">
+        <h3>Jokes_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button">
+        <span class="theme-icon"></span>
+    </button>
+
+    <main class="jokes-main">
+        <div class="jokes-loader" id="jokes-loader" style="display: none;">
+            <div class="jokes-spinner"></div>
+            <span>Ищем смешную шутку...</span>
+        </div>
+
+        <article class="jokes-card" id="jokes-card">
+            <div class="jokes-icon">😂</div>
+            <div class="jokes-text-wrap">
+                <p class="jokes-text" id="jokes-text">
+                    Нажмите на кнопку ниже, и я расскажу анекдот.
+                </p>
+            </div>
+            <div class="jokes-actions">
+                <button class="jokes-btn jokes-btn-secondary" id="jokes-share-btn">
+                    <span>📤</span> Поделиться
+                </button>
+                <button class="jokes-btn jokes-btn-primary" id="jokes-next-btn">
+                    <span>🎲</span> Следующий анекдот
+                </button>
+            </div>
+        </article>
+
+    </main>
+</body>
+</html>

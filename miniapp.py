@@ -1,6 +1,7 @@
 import os
 import uuid
 import io
+import qrcode
 import time
 import base64
 import wikipedia
@@ -9,7 +10,7 @@ import randfacts
 from translate import Translator
 from gtts import gTTS
 from PIL import Image, ImageFilter, ImageOps
-from flask import Flask, render_template, request, jsonify, session, send_file, url_for, flash
+from flask import Flask, render_template, request, jsonify, session, send_file, make_response, send_from_directory
 from gigachat import GigaChat
 from random import *
 from werkzeug.utils import secure_filename
@@ -18,10 +19,12 @@ from db_service import DB_service
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 wikipedia.set_user_agent("TG_MiniApp_Bot/1.0 (https://github.com/yourusername)")
 
+QR_FOLDER = 'voices'
+os.makedirs(QR_FOLDER, exist_ok=True)
 
 CREDENTIALS = os.getenv("CREDENTIALS", "")
 encoded_credentials = base64.b64encode(CREDENTIALS.encode()).decode()
@@ -78,7 +81,22 @@ def is_real_image(file_storage):
         file_storage.stream.seek(0)
         return False
 
+@app.route("/register_user", methods=["POST"])
+def register_user():
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+        username = data.get("username", "Anonymous")
 
+        if not user_id:
+            return jsonify({"ok": False}), 400
+
+        db.create_user(int(user_id), int(user_id), str(username))
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        print(f"Ошибка регистрации: {e}")
+        return jsonify({"ok": False}), 500
 
 @app.route("/")
 def index():
@@ -155,6 +173,8 @@ def upload():
         img = Image.open(file.stream).convert("RGB")
         img = ImageOps.exif_transpose(img)
 
+        img.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+
         blurred = img.filter(ImageFilter.GaussianBlur(radius=8))
         small = blurred.resize((48, 48), Image.Resampling.LANCZOS)
         pixelated = small.resize(img.size, Image.Resampling.NEAREST)
@@ -164,13 +184,9 @@ def upload():
         result.save(bio, format="PNG", optimize=True)
         bio.seek(0)
 
-        img_base64 = base64.b64encode(bio.read()).decode("utf-8")
-        
-        return jsonify({
-            "ok": True,
-            "image": f"data:image/png;base64,{img_base64}",
-            "filename": download_name
-        })
+        response = make_response(send_file(bio, mimetype='image/png'))
+        response.headers['X-Filename'] = download_name
+        return response
 
     except Exception as e:
         return jsonify({"ok": False, "error": f"Ошибка: {str(e)}"}), 500
@@ -457,13 +473,9 @@ def wiki_random():
         print(f"Ошибка Wikipedia API (random): {e}")
         return jsonify({"ok": False, "error": "Не удалось загрузить случайную статью. Попробуйте ещё раз."})
 
-
-
-
 @app.route("/Rand_fact_bot")
 def Rand_fact_bot():
     return render_template('Rand_fact_bot.html')
-
 
 @app.route("/api/random_fact")
 def get_random_fact():
@@ -486,6 +498,68 @@ def get_random_fact():
             "error": "Не удалось загрузить факт. Попробуйте ещё раз."
         })
 
+@app.route("/Jokes_bot")
+def Jokes_bot():
+    return render_template('Jokes_bot.html')
+
+@app.route("/api/get_joke")
+def get_joke():
+    try:
+        prompt = 'Расскажи мне очень смешной анекдот, чтобы все засмеялись. Но ты обязан написать ТОЛЬКО анекдот, без лишних слов, вступлений и объяснений. Также этот анекдот НЕ должен быть про секс. Пиши анекдоты на разные тематики, не только про докторов и врачей! Пиши только 1 анекдот!'
+        
+        with GigaChat(credentials=encoded_credentials, verify_ssl_certs=False) as giga:
+            response = giga.chat(prompt)
+            AI_answer = response.choices[0].message.content.strip()
+            
+        return jsonify({
+            "ok": True,
+            "text": AI_answer
+        })
+        
+    except Exception as e:
+        print(f"Ошибка GigaChat: {e}")
+        return jsonify({
+            "ok": False,
+            "error": "Не удалось сгенерировать шутку. Попробуйте позже."
+        })
+
+@app.route("/QR_Creator_bot")
+def QR_Creator_bot():
+    return render_template('QR_Creator_bot.html')
+
+@app.route('/api/generate_qr', methods=['POST'])
+def generate_qr():
+    data = request.get_json()
+    url = data.get('url', '')
+
+    if not url:
+        return jsonify({'error': 'Пустая ссылка'}), 400
+
+    filename = f"qr_{uuid.uuid4().hex[:8]}.png"
+    filepath = os.path.join(QR_FOLDER, filename)
+
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        img.save(filepath)
+
+        return jsonify({
+            'success': True,
+            'download_url': f'/static/qrcodes/{filename}'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/static/qrcodes/<path:filename>')
+def serve_qr(filename):
+    return send_from_directory(QR_FOLDER, filename)
 
 
 if __name__ == "__main__":

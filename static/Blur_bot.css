@@ -313,3 +313,14 @@ html.dark-mode .bot-card {
 .download:hover {
     filter: brightness(1.05);
 }
+
+.upload-box.dragover {
+    border-color: rgba(108, 140, 255, 0.9);
+    background: rgba(108, 140, 255, 0.12);
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+.upload-box {
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}

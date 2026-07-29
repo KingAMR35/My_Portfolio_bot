@@ -214,7 +214,7 @@ html.dark-mode .bot-card {
 /* !BOT! */
 
 
-.fact-main {
+.jokes-main {
     max-width: 325px;
     margin: 0 auto;
     padding: 20px 16px 40px;
@@ -223,7 +223,11 @@ html.dark-mode .bot-card {
     align-items: center;
 }
 
-.fact-loader {
+html.dark-mode .jokes-loader {
+    color: var(--text-dark);
+}
+
+.jokes-loader {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -236,7 +240,7 @@ html.dark-mode .fact-loader {
     color: var(--text-dark);
 }
 
-.fact-spinner {
+.jokes-spinner {
     width: 40px;
     height: 40px;
     border: 3px solid rgba(255, 255, 255, 0.2);
@@ -249,7 +253,7 @@ html.dark-mode .fact-loader {
     to { transform: rotate(360deg); }
 }
 
-.fact-card {
+.jokes-card {
     width: 100%;
     padding: 32px 24px;
     border-radius: 24px;
@@ -264,18 +268,18 @@ html.dark-mode .fact-loader {
     gap: 24px;
 }
 
-html.dark-mode .fact-card {
+html.dark-mode .jokes-card {
     background: var(--box-dark);
     border: 1px solid var(--border-dark);
 }
 
-.fact-card.fade-out {
+.jokes-card.fade-out {
     opacity: 0;
     transform: translateY(10px) scale(0.98);
     transition: all 0.2s ease;
 }
 
-.fact-card.fade-in {
+.jokes-card.fade-in {
     animation: cardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
@@ -284,7 +288,7 @@ html.dark-mode .fact-card {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.fact-icon {
+.jokes-icon {
     font-size: 48px;
     animation: pulse 2s ease-in-out infinite;
 }
@@ -294,7 +298,7 @@ html.dark-mode .fact-card {
     50% { transform: scale(1.1); }
 }
 
-.fact-text-wrap {
+.jokes-text-wrap {
     flex: 1;
     display: flex;
     align-items: center;
@@ -302,7 +306,7 @@ html.dark-mode .fact-card {
     min-height: 100px;
 }
 
-.fact-text {
+.jokes-text {
     font-size: 20px;
     line-height: 1.6;
     font-weight: 600;
@@ -311,18 +315,18 @@ html.dark-mode .fact-card {
     margin: 0;
 }
 
-html.dark-mode .fact-text {
+html.dark-mode .jokes-text {
     color: var(--text-dark);
 }
 
-.fact-actions {
+.jokes-actions {
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.fact-btn {
+.jokes-btn {
     width: 100%;
     padding: 16px;
     border-radius: 16px;
@@ -338,38 +342,38 @@ html.dark-mode .fact-text {
     border: none;
 }
 
-.fact-btn-primary {
+.jokes-btn-primary {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: white;
     box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
 }
 
-.fact-btn-primary:hover {
+.jokes-btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4);
 }
 
-.fact-btn-primary:active {
+.jokes-btn-primary:active {
     transform: scale(0.97);
 }
 
-.fact-btn-secondary {
+.jokes-btn-secondary {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid var(--border-light);
     color: var(--text-light);
 }
 
-html.dark-mode .fact-btn-secondary {
+html.dark-mode .jokes-btn-secondary {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
 }
 
-.fact-btn-secondary:hover {
+.jokes-btn-secondary:hover {
     background: rgba(255, 255, 255, 0.25);
 }
 
-.fact-back-btn {
+.jokes-back-btn {
     margin-top: 24px;
     display: block;
     width: 100%;
@@ -385,13 +389,13 @@ html.dark-mode .fact-btn-secondary {
     transition: all 0.2s ease;
 }
 
-html.dark-mode .fact-back-btn {
+html.dark-mode .jokes-back-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-dark);
     color: var(--text-dark);
 }
 
-.fact-back-btn:hover {
+.jokes-back-btn:hover {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.25);
 }

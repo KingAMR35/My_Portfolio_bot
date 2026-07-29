@@ -192,14 +192,20 @@ class DB_service:
         conn = self.get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO users (user_id, chat_id, username)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (user_id)
-                    DO UPDATE SET
-                        chat_id = EXCLUDED.chat_id,
-                        username = EXCLUDED.username
-                """, (user_id, chat_id, username))
+                cur.execute("SELECT 1 FROM users WHERE user_id = %s", (user_id,))
+                exists = cur.fetchone() is not None
+                
+                if exists:
+                    cur.execute("""
+                        UPDATE users 
+                        SET chat_id = %s, username = %s 
+                        WHERE user_id = %s
+                    """, (chat_id, username, user_id))
+                else:
+                    cur.execute("""
+                        INSERT INTO users (user_id, chat_id, username)
+                        VALUES (%s, %s, %s)
+                    """, (user_id, chat_id, username))
             conn.commit()
         finally:
             self.release_connection(conn)

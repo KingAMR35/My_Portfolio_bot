@@ -5,46 +5,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('fact-next-btn');
     const shareBtn = document.getElementById('fact-share-btn');
 
-    if (!card) return;
+    if (!card || !loader) return;
 
     let currentText = '';
+    let isFirstLoad = true;
 
     async function loadFact() {
-        card.classList.remove('fade-in');
-        card.classList.add('fade-out');
-        if (loader) loader.style.display = 'flex';
         nextBtn.disabled = true;
+        shareBtn.disabled = true;
+
+        if (!isFirstLoad) {
+            card.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'flex';
+            }, 300);
+        }
 
         try {
             const response = await fetch('/api/random_fact');
             
             if (!response.ok) {
-                throw new Error(`Сервер вернул ошибку: ${response.status} ${response.statusText}`);
+                throw new Error(`Сервер вернул ошибку: ${response.status}`);
             }
 
             const data = await response.json();
 
             if (data.ok) {
                 currentText = data.text;
-                setTimeout(() => {
-                    textEl.textContent = data.text;
-                    if (loader) loader.style.display = 'none';
-                    card.classList.remove('fade-out');
-                    card.classList.add('fade-in');
-                    nextBtn.disabled = false;
-                }, 300);
+                textEl.textContent = data.text;
             } else {
                 throw new Error(data.error || 'Неизвестная ошибка сервера');
             }
         } catch (err) {
             console.error("Ошибка загрузки факта:", err);
-            if (loader) loader.style.display = 'none';
+            textEl.textContent = `❌ Ошибка: ${err.message}. Проверьте интернет.`;
+        } finally {
+            loader.style.display = 'none';
             
-            textEl.textContent = `❌ Ошибка: ${err.message}`;
-            
-            card.classList.remove('fade-out');
-            card.classList.add('fade-in');
-            nextBtn.disabled = false;
+            setTimeout(() => {
+                card.classList.remove('hidden');
+                isFirstLoad = false;
+                
+                nextBtn.disabled = false;
+                shareBtn.disabled = false;
+            }, isFirstLoad ? 50 : 350); 
         }
     }
 
@@ -52,18 +56,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     shareBtn.addEventListener('click', async () => {
         if (!currentText) return;
+        
         const shareText = `💡 Интересный факт:\n\n${currentText}\n\n@KingAMR_bot`;
+        const originalText = shareBtn.innerHTML;
+        
+        shareBtn.innerHTML = '<span>⏳</span> Отправка...';
+        shareBtn.disabled = true;
+
         try {
             if (navigator.share) {
                 await navigator.share({ title: 'Интересный факт', text: shareText });
+                shareBtn.innerHTML = originalText;
             } else {
                 await navigator.clipboard.writeText(shareText);
-                const original = shareBtn.innerHTML;
                 shareBtn.innerHTML = '<span>✅</span> Скопировано!';
-                setTimeout(() => { shareBtn.innerHTML = original; }, 1500);
+                setTimeout(() => { shareBtn.innerHTML = originalText; }, 1500);
             }
         } catch (err) {
-            if (err.name !== 'AbortError') console.error(err);
+            if (err.name === 'AbortError') {
+                shareBtn.innerHTML = originalText;
+            } else {
+                console.error(err);
+                shareBtn.innerHTML = '<span>❌</span> Ошибка';
+                setTimeout(() => { shareBtn.innerHTML = originalText; }, 1500);
+            }
+        } finally {
+            shareBtn.disabled = false;
         }
     });
 

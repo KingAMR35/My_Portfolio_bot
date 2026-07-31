@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.ready();
     tg.expand();
 
-    const themeToggle = document.getElementById('theme-toggle');
     const urlInput = document.getElementById('urlInput');
     const generateBtn = document.getElementById('generateBtn');
     const errorMessage = document.getElementById('errorMessage');
@@ -12,23 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('downloadBtn');
 
     let currentUrl = '';
-
-    const applyTheme = (isDark) => {
-        if (isDark) {
-            document.documentElement.classList.add('dark-mode');
-        } else {
-            document.documentElement.classList.remove('dark-mode');
-        }
-    };
-
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const tgTheme = tg.colorScheme === 'dark';
-    applyTheme(tgTheme || prefersDark);
-
-    themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark-mode');
-        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    });
+    let qrCodeObj = null;
 
     const isValidUrl = (string) => {
         try {
@@ -62,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
-            new QRCode(qrcodeContainer, {
+            qrCodeObj = new QRCode(qrcodeContainer, {
                 text: text,
                 width: 200,
                 height: 200,
@@ -88,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     downloadBtn.addEventListener('click', async () => {
-        if (!currentUrl) {
+        if (!currentUrl || !qrCodeObj) {
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             alert("Сначала сгенерируйте QR-код");
             return;
@@ -98,54 +81,35 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBtn.textContent = 'Подготовка...';
 
         try {
-            const response = await fetch('/api/generate_qr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: currentUrl })
-            });
+            const canvas = qrcodeContainer.querySelector('canvas');
+            if (!canvas) throw new Error('Canvas не найден');
 
-            const data = await response.json();
-
-            if (!data.success || !data.download_url) {
-                throw new Error('Ошибка генерации QR');
-            }
-
-            const fileResponse = await fetch(data.download_url);
-            const blob = await fileResponse.blob();
-
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
             const file = new File([blob], 'qrcode.png', { type: 'image/png' });
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                });
-
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
+                await navigator.share({ files: [file] });
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             } else {
-                throw new Error('Web Share API не поддерживается');
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'qrcode.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             }
 
         } catch (error) {
             console.error('Ошибка:', error);
             
-            try {
-                const link = document.createElement('a');
-                link.href = data.download_url;
-                link.download = 'qrcode.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
-            } catch (fallbackError) {
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.notificationOccurred('error');
-                }
-                alert('Не удалось поделиться файлом. Попробуйте сделать скриншот.');
+            if (error.name === 'AbortError') {
+                console.log('Пользователь отменил');
+            } else {
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                alert('Не удалось поделиться. Удерживайте QR-код для сохранения.');
             }
         } finally {
             downloadBtn.disabled = false;
@@ -157,6 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') {
             generateBtn.click();
             urlInput.blur();
+        }
+    });
+
+    document.addEventListener('click', function(event) {
+        if (document.activeElement === urlInput) {
+            if (!document.querySelector('.input-group').contains(event.target)) {
+                urlInput.blur();
+            }
         }
     });
 });

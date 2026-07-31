@@ -8,16 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Библиотека для генерации QR на стороне клиента -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <script src="{{ url_for('static', filename='js/QR_Creator_bot.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-    <!-- ВАШ ИСХОДНЫЙ HEADER -->
     <div class="box">
         <h3>QR_Creator_bot</h3>
     </div>
@@ -26,7 +22,6 @@
         <span class="theme-icon"></span>
     </button>
 
-    <!-- ДОПИСАННЫЙ ФУНКЦИОНАЛ -->
     <main class="menu-list">
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="Вставьте ссылку (https://...)" autocomplete="off">
@@ -39,7 +34,7 @@
             <div id="qrcode"></div>
             <p class="result-text">Ваш QR-код готов!</p>
             <button id="downloadBtn" class="download-btn">Поделиться</button>
-            <p class="hint-text">💡 Если вы используете ПК или ноутбук, то нажмите ПКМ по QR-Code</p>
+            <p class="hint-text">💡 Также, если вы используете ПК или ноутбук, то вы можете нажать ПКМ по QR-CODE, чтобы сохранить</p>
         </div>
     </main>
 </body>

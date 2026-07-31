@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const charCounter = document.getElementById('wiki-char-counter');
     const searchBtn = document.getElementById('wiki-search-btn');
     const randomBtn = document.getElementById('wiki-random-btn');
+    const searchBox = document.querySelector('.wiki-search-box');
     
     const loader = document.getElementById('wiki-loader');
     const errorBlock = document.getElementById('wiki-error');
@@ -143,4 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         errorText.textContent = msg;
         errorBlock.style.display = 'flex';
     }
+
+    document.addEventListener('click', function(event) {
+        if (document.activeElement === searchInput) {
+            if (!searchBox.contains(event.target)) {
+                searchInput.blur();
+            }
+        }
+    });
 });

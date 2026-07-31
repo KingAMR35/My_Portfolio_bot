@@ -3,6 +3,7 @@ python-dotenv>=1.0.0
 wikipedia>=1.4.0
 validators>=0.33.0
 pyqrcode>=1.2.1
+qrcode[pil]>=7.4.2
 gTTS>=2.5.1
 translate>=3.6.1
 gigachat>=0.1.36
@@ -10,4 +11,4 @@ requests>=2.32.0
 Pillow>=10.4.0
 Flask>=3.0.0
 psycopg2-binary>=2.9.9
-randfacts==0.18.0
+randfacts>=0.18.0

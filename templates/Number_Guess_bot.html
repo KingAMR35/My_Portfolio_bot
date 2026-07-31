@@ -30,11 +30,11 @@
             <div class="stats">
                 <div class="stat">
                     <span>Попытки</span>
-                    <b id="tries">{{ tries }}</b>
+                    <b id="tries">{{ tries if tries is defined else 0 }}</b>
                 </div>
                 <div class="stat">
                     <span>Статус</span>
-                    <b id="status">{{ status }}</b>
+                    <b id="status">{{ status if status is defined else 'Новая игра' }}</b>
                 </div>
             </div>
 
@@ -43,17 +43,19 @@
                 <input class="guess-input" type="hidden" name="username" id="hidden-username" value="{{ session.get('username', '') }}">
                 
                 <input class="guess-input" type="number" name="guess" min="1" max="1000" placeholder="Ваше число" required>
+                <div class="pustota"></div>
+                <button class="btn-main" type="submit">Проверить</button>
                 <div class="row">
-                    <button class="btn-main" type="submit">Проверить</button>
+                    <a href="/Number_Guess_statistic" class="btn-stats" id="stats-btn">
+                        🏆 Статистика
+                    </a>
                     <button class="btn-reset" id="reset-btn" type="button">Заново</button>
                 </div>
-                <a href="/Number_Guess_statistic" class="btn-stats" id="stats-btn">
-                    🏆 Статистика
-                </a>
+                
 
             </form>
 
-            <div class="message {{ message_class }}" id="message">{{ message }}</div>
+            <div class="message {{ message_class if message_class is defined else '' }}" id="message">{{ message if message is defined else '' }}</div>
 
         </div>
     </div>

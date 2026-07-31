@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='Image_Generator_bot.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="{{ url_for('static', filename='js/Image_Generator_bot.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <div class="box">
+        <h3>Image_Generator_bot</h3>
+    </div>
+
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">
+        <span class="theme-icon"></span>
+    </button>
+
+    <main class="menu-list">
+        <div class="img-generator-panel">
+            <div class="img-generator-input-wrap">
+                <textarea 
+                    id="img-generator-text" 
+                    class="img-generator-textarea" 
+                    placeholder="Опишите картинку, которую вы хотите..."
+                    maxlength="1500"
+                    rows="4"></textarea>
+                <div class="char-counter">
+                    <span id="char-count">0</span> / 1500
+                </div>
+            </div>
+            
+            <button id="generate-btn" class="generate-btn">
+                <span>✨ Сгенерировать</span>
+            </button>
+            <p class="hint-text">💡 Поскольку ИИ бесплатный, результат может быть неидеальным, но угарным(не баг, а фича)</p>
+        </div>
+
+        <div id="loader" class="loader-container" style="display: none;">
+            <div class="spinner"></div>
+            <p>Нейросеть рисует ваш шедевр...</p>
+        </div>
+
+        <div id="result-container" class="result-container" style="display: none;">
+            <img id="generated-image" src="" alt="Generated Image" class="generated-image">
+            <button id="share-btn" class="share-btn">
+                <span>📤</span> Поделиться / Сохранить
+            </button>
+        </div>
+
+        <p id="error-message" class="error-message" style="display: none;"></p>
+    </main>
+
+    <div id="fullscreen-overlay" class="fullscreen-overlay">
+        <button id="close-overlay" class="close-overlay-btn">✕</button>
+        <img id="fullscreen-image" src="" alt="Full Image">
+        <div class="fullscreen-hint">
+            <p>💡 Также, если вы используете ПК или ноутбук, то вы можете нажать ПКМ по картинке, чтобы сохранить</p>
+        </div>
+    </div>
+</body>
+</html>

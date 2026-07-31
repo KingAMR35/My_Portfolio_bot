@@ -13,8 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentBlobUrl = '';
     let currentFilename = 'blurred.png';
-
-    // Drag & Drop события
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, (e) => {
             e.preventDefault();
@@ -44,15 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Сбрасываем value, чтобы можно было выбрать тот же файл повторно
         fileInput.value = '';
 
         if (currentBlobUrl) {
             URL.revokeObjectURL(currentBlobUrl);
         }
 
-        dropZone.querySelector('p').textContent = 'Обработка...';
-        dropZone.style.pointerEvents = 'none'; // Блокируем клики
+        dropZone.querySelector('p').textContent = 'Обработка, пожалуйста подождите...';
+        dropZone.style.pointerEvents = 'none';
         flashMessages.innerHTML = '';
         resultArea.style.display = 'none';
 
@@ -84,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             flashMessages.innerHTML = `<div class="msg error">${err.message || 'Ошибка сети'}</div>`;
             dropZone.querySelector('p').textContent = 'Нажмите для выбора фото';
         } finally {
-            dropZone.style.pointerEvents = 'auto'; // Разблокируем клики
+            dropZone.style.pointerEvents = 'auto';
         }
     });
 

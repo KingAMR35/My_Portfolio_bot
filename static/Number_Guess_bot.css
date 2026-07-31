@@ -414,6 +414,7 @@ html.dark-mode .btn-main{
 }
 
 .btn-main {
+    top: 30px;
     flex: 1;
     background: linear-gradient(135deg, #489aff, #5f6fff);
     color: white;
@@ -526,7 +527,6 @@ html.dark-mode .message.hint{
     box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
     text-decoration: none;
     text-align: center;
-    margin-top: 4px;
 }
 
 .btn-stats:hover {
@@ -862,4 +862,7 @@ html.dark-mode .row-score{
 
 .btn-back-stat:active {
     transform: scale(0.98);
+}
+.pustota {
+    height: 5px;
 }

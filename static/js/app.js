@@ -155,7 +155,6 @@
         bindNavigationLinks();
         syncTelegramButtons();
 
-        // Заполняем скрытые поля user_id/username (нужно всем ботам)
         if (tg) {
             try { tg.expand(); } catch (e) {}
 
@@ -168,7 +167,6 @@
                 hiddenUsername.value = user.username || 'Anonymous';
             }
 
-            // Регистрация пользователя в БД при открытии Mini App
             if (user) {
                 fetch('/register_user', {
                     method: 'POST',

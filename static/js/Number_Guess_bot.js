@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const guessForm = document.getElementById('guess-form');
     const submitBtn = guessForm?.querySelector('.btn-main');
     const resetBtn = document.getElementById('reset-btn');
+    const guessInput = guessForm?.querySelector('input[name="guess"]');
 
     if (!guessForm) return;
 
@@ -45,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(data => {
                 updateUI(data);
-                const guessInput = guessForm.querySelector('input[name="guess"]');
                 if (guessInput) {
                     guessInput.value = '';
                     guessInput.focus();
@@ -90,6 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    document.addEventListener('click', function(event) {
+        if (document.activeElement === guessInput) {
+            if (!guessForm.contains(event.target)) {
+                guessInput.blur();
+            }
+        }
+    });
 });
 
 function createConfetti() {

@@ -5,13 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('jokes-next-btn');
     const shareBtn = document.getElementById('jokes-share-btn');
 
-    if (!card) return;
+    if (!card || !loader) return;
 
     let currentJoke = '';
 
     async function loadJoke() {
-        card.classList.remove('fade-in');
-        card.classList.add('fade-out');
+        card.style.display = 'none';
+        
         loader.style.display = 'flex';
         nextBtn.disabled = true;
 
@@ -21,23 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.ok) {
                 currentJoke = data.text;
-
-                setTimeout(() => {
-                    textEl.textContent = data.text;
-                    loader.style.display = 'none';
-                    card.classList.remove('fade-out');
-                    card.classList.add('fade-in');
-                    nextBtn.disabled = false;
-                }, 300);
+                textEl.textContent = data.text;
             } else {
                 throw new Error(data.error || 'Ошибка получения шутки');
             }
         } catch (err) {
             console.error('Ошибка загрузки анекдота:', err);
-            loader.style.display = 'none';
             textEl.textContent = '❌ Не удалось загрузить анекдот. Попробуйте ещё раз!';
-            card.classList.remove('fade-out');
-            card.classList.add('fade-in');
+        } finally {
+            loader.style.display = 'none';
+            card.style.display = 'flex';
             nextBtn.disabled = false;
         }
     }

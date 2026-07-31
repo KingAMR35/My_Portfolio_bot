@@ -216,7 +216,11 @@ def process_user_id_send(message):
     try:
         user_id = int(message.text.strip())
     except ValueError:
-        msg = bot.send_message(message.chat.id, "ID должен быть числом. Введите ID ещё раз:")
+        msg = bot.send_message(
+            message.chat.id,
+            "ID должен быть числом. Введите ID ещё раз:",
+            parse_mode='Markdown'
+        )
         bot.register_next_step_handler(msg, process_user_id_send)
         return
     msg = bot.send_message(message.chat.id, "Теперь введите сообщение для этого пользователя:")
@@ -237,7 +241,11 @@ def send_content_to_user(user_id, message):
         elif message.animation:
             bot.send_animation(user_id, message.animation.file_id, caption=message.caption or "")
         elif message.text:
-            bot.send_message(user_id, message.text)
+            bot.send_message(
+                user_id,
+                message.text,
+                parse_mode='Markdown'
+            )
         else:
             bot.send_message(user_id, "📩 Сообщение получено, но тип не поддержан.")
         return True, None
@@ -248,9 +256,17 @@ def process_message_send(message, user_id):
     ok, error = send_content_to_user(user_id, message)
 
     if ok:
-        bot.send_message(message.chat.id, "✅ Сообщение отправлено.")
+        bot.send_message(
+            message.chat.id,
+            "✅ Сообщение отправлено.",
+            parse_mode='Markdown'
+        )
     else:
-        bot.send_message(message.chat.id, f"❌ Ошибка отправки: {error}")
+        bot.send_message(
+            message.chat.id,
+            f"❌ Ошибка отправки: {error}",
+            parse_mode='Markdown'
+        )
 
     admin_bot(message)
 
@@ -268,7 +284,8 @@ def process_broadcast_message(message):
 
     bot.send_message(
         message.chat.id,
-        f"✅ Рассылка завершена.\nОтправлено: {ok_count}\nОшибок: {fail_count}"
+        f"✅ Рассылка завершена.\nОтправлено: {ok_count}\nОшибок: {fail_count}",
+        parse_mode='HTML'
     )
 
     admin_bot(message)
@@ -677,7 +694,7 @@ def guess(message):
                         parse_mode='HTML', reply_markup=again_keyboard())
 
 def build_prompt(user_prompt):
-    return f"{user_prompt}, high quality, detailed, realistic"
+    return f"{user_prompt}"
 
 @bot.message_handler(content_types=['text'])
 def text_handler(message):
@@ -718,8 +735,10 @@ def text_handler(message):
         return
     
     elif user_sessions.get(user_id) == 'Image_Generator':
+
         raw_prompt = message.text.strip()
-        prompt = build_prompt(raw_prompt)
+        translator = Translator(to_lang="en")
+        translation = translator.translate(raw_prompt)
         chat_id = message.chat.id
         username = message.from_user.username
 
@@ -727,9 +746,9 @@ def text_handler(message):
         bot.send_message(message.chat.id, "Подождите, идёт генерация изображения🔄")
         bot.send_chat_action(chat_id, 'upload_photo')
 
-        image_buffer, status = generate_leonardo_image(prompt)
+        image_buffer, status = generate_leonardo_image(translation)
 
-        manager.leonardo_AI(user_id, raw_prompt, username)
+        manager.leonardo_AI(user_id, translation, username)
 
         if image_buffer:
             bot.send_photo(

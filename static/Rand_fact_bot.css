@@ -395,3 +395,50 @@ html.dark-mode .fact-back-btn {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.25);
 }
+.fact-card {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fact-card.hidden {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+    pointer-events: none; 
+}
+
+.fact-loader {
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: var(--text-light, #6b7280);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.fact-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+html.dark-mode .fact-spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: #60a5fa;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.fact-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}

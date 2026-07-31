@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     input.addEventListener("input", autoResize);
     
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            form.dispatchEvent(new Event("submit"));
+        }
+    });
+    
     input.addEventListener("focus", () => {
         setTimeout(() => {
             input.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -98,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Закрытие клавиатуры при клике вне поля ввода
     document.addEventListener('click', function(event) {
         if (document.activeElement === input) {
             if (!form.contains(event.target)) {
@@ -107,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Прокрутка при изменении размера окна
     window.addEventListener('resize', () => {
         if (document.activeElement === input) {
             setTimeout(() => {

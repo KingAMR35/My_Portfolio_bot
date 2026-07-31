@@ -3,15 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Случайные факты</title>
+    <title>Mini App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='Rand_fact_bot.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="{{ url_for('static', filename='js/telegram-init.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/rand_fact_bot.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/Rand_fact_bot.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
 <body>
     <div class="box">
@@ -23,28 +23,27 @@
     </button>
 
     <main class="fact-main">
-        <div class="fact-loader" id="fact-loader" style="display: none;">
+        <div class="fact-loader" id="fact-loader" style="display: flex;">
             <div class="fact-spinner"></div>
             <span>Ищем интересный факт...</span>
         </div>
 
-        <article class="fact-card" id="fact-card">
+        <article class="fact-card hidden" id="fact-card">
             <div class="fact-icon">💡</div>
             <div class="fact-text-wrap">
                 <p class="fact-text" id="fact-text">
-                    Нажми кнопку ниже, чтобы узнать что-то новое!
+                    Загрузка...
                 </p>
             </div>
             <div class="fact-actions">
-                <button class="fact-btn fact-btn-secondary" id="fact-share-btn">
+                <button class="fact-btn fact-btn-secondary" id="fact-share-btn" disabled>
                     <span>📤</span> Поделиться
                 </button>
-                <button class="fact-btn fact-btn-primary" id="fact-next-btn">
+                <button class="fact-btn fact-btn-primary" id="fact-next-btn" disabled>
                     <span>🎲</span> Следующий факт
                 </button>
             </div>
         </article>
-
     </main>
 </body>
 </html>

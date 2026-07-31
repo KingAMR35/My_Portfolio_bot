@@ -7,6 +7,7 @@ import base64
 import wikipedia
 import wikipedia.exceptions
 import randfacts
+from AI_service import generate_leonardo_image
 from translate import Translator
 from gtts import gTTS
 from PIL import Image, ImageFilter, ImageOps
@@ -42,7 +43,7 @@ def get_user_info():
     if username:
         session['username'] = str(username)
     
-    return session.get('user_id', 123456789), session.get('username', 'Player')
+    return session.get('user_id'), session.get('username')
 
 def ensure_game_exists(user_id):
     if session.get('game_bot_choice') is not None and session.get('game_attempts') is not None:
@@ -193,32 +194,26 @@ def upload():
 
 @app.route("/Number_Guess_bot")
 def Number_Guess_bot():
-    user_id, username = get_user_info()
-    
-    if not session.get('user_registered'):
-        db.create_user(user_id=int(user_id), chat_id=int(user_id), username=str(username))
-        session['user_registered'] = True
-    
-    attempts = ensure_game_exists(user_id)
-    
-    attempts = int(attempts) if not isinstance(attempts, tuple) else int(attempts[1])
-    
-    message = session.pop('message', "Введите число и проверьте свою удачу 🎲")
-    message_class = session.pop('message_class', "")
-    status = session.pop('status', "Новая игра" if attempts == 0 else "Идет игра")
+    user_id = request.args.get('user_id') or request.headers.get('X-Telegram-User-Id')
+    username = request.args.get('username') or request.headers.get('X-Telegram-Username')
 
-    return render_template(
-        'Number_Guess_bot.html',
-        tries=attempts,
-        status=status,
-        message=message,
-        message_class=message_class
-    )
+    if user_id:
+        try:
+            safe_user_id = int(user_id)
+            safe_username = str(username) if username else f"user_{safe_user_id}"
+            
+            db.create_user(user_id=safe_user_id, chat_id=safe_user_id, username=safe_username)
+        except (ValueError, TypeError) as e:
+            print(f"⚠️ Ошибка преобразования user_id: {e}")
+    else:
+        pass
+
+    return render_template('Number_Guess_bot.html')
 
 @app.route('/guess', methods=['POST'])
 def guess():
-    user_id = request.form.get('user_id') or session.get('user_id') or 123456789
-    username = request.form.get('username') or session.get('username') or 'Player'
+    user_id = request.form.get('user_id') or session.get('user_id')
+    username = request.form.get('username') or session.get('username')
     
     session['user_id'] = int(user_id)
     session['username'] = str(username)
@@ -496,7 +491,7 @@ def get_random_fact():
         return jsonify({
             "ok": False, 
             "error": "Не удалось загрузить факт. Попробуйте ещё раз."
-        })
+        }), 500
 
 @app.route("/Jokes_bot")
 def Jokes_bot():
@@ -531,9 +526,18 @@ def QR_Creator_bot():
 def generate_qr():
     data = request.get_json()
     url = data.get('url', '')
+    old_filename = data.get('old_filename', '')
 
     if not url:
         return jsonify({'error': 'Пустая ссылка'}), 400
+
+    if old_filename:
+        old_filepath = os.path.join(QR_FOLDER, old_filename)
+        if os.path.exists(old_filepath):
+            try:
+                os.remove(old_filepath)
+            except Exception as e:
+                print(f"⚠️ Не удалось удалить {old_filename}: {e}")
 
     filename = f"qr_{uuid.uuid4().hex[:8]}.png"
     filepath = os.path.join(QR_FOLDER, filename)
@@ -552,14 +556,66 @@ def generate_qr():
 
         return jsonify({
             'success': True,
-            'download_url': f'/static/qrcodes/{filename}'
+            'download_url': f'/voices/{filename}',
+            'filename': filename
         })
     except Exception as e:
+        print(f"Ошибка генерации QR: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/static/qrcodes/<path:filename>')
+@app.route('/voices/<path:filename>')
 def serve_qr(filename):
     return send_from_directory(QR_FOLDER, filename)
+
+@app.route('/Image_Generator_bot')
+def Image_Generator_bot():
+    return render_template('Image_Generator_bot.html')
+
+@app.route('/api/generate_image', methods=['POST'])
+def generate_image():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Неверный формат данных"}), 400
+    
+    query = data.get("query", "").strip()
+    translator = Translator(to_lang="en")
+    translation = translator.translate(query)
+    user_id = data.get("user_id")
+    username = data.get("username", "unknown_user")
+
+    if not translation:
+        return jsonify({"error": "Введите описание для генерации"}), 400
+
+    try:
+        image_buffer, status = generate_leonardo_image(translation)
+        
+        if not status or not image_buffer:
+            return jsonify({
+                "success": False, 
+                "error": "Не удалось сгенерировать изображение"
+            }), 500
+
+        image_buffer.seek(0)
+        image_base64 = base64.b64encode(image_buffer.getvalue()).decode('utf-8')
+
+        try:
+            db.leonardo_AI(user_id=user_id, prompt=query, username=username)
+        except TypeError as e:
+            print(f"⚠️ Ошибка записи в БД (проверьте аргументы метода leonardo_AI): {e}")
+        except Exception as e:
+            print(f"⚠️ Ошибка записи в БД: {e}")
+
+        return jsonify({
+            "success": True,
+            "image_base64": f"data:image/png;base64,{image_base64}"
+        })
+
+    except Exception as e:
+        print(f"❌ Критическая ошибка генерации: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Ошибка сервера: {str(e)}"
+        }), 500  
 
 
 if __name__ == "__main__":
